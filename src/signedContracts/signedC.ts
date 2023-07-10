@@ -1,12 +1,12 @@
 import { ethers } from "ethers";
 import abiCrypto from "../contracts/exchange.json";
 import abiNFT from "../contracts/ExchangeNFT.json";
-import { utils } from "ethers";
+import abiToken from "../contracts/stakeToken.json";
+var hdate = require("human-date");
 
 const sepoliaURL = String(process.env.REACT_APP_SEPOLIA_URL);
 
 const networks = ["11155111", "80001", "97"];
-const blocks = [3843400, 37631257, 29756066];
 const JRPCFromId = new Map([
   ["11155111", sepoliaURL],
   [
@@ -16,16 +16,10 @@ const JRPCFromId = new Map([
   ["97", "https://bsc-testnet.publicnode.com"],
 ]);
 const exchangeAddressFromId = new Map([
-  ["11155111", "0x99D04D8a8CC1b74012A8Fd6A157470F404365786"],
-  ["80001", "0xAF9D4F5d7896eB420451Cd89832a1ea152651058"],
+  ["11155111", "0x2554eFC6bc5d6738019c02DAC274e7A1b7aDE990"],
+  ["80001", "0x26595294c31126CBC60Ce34D72AB3A2f1C9E4168"],
   ["97", "0x670E9c8cb57b2C924dac907b214415C26D656693"],
 ]);
-
-let sepoliaSigned, mumbaiSigned, bscSigned;
-
-const ids = ["11155111", "80001", "97"];
-
-const signedContracts: any = [];
 
 function getSignedContract(id: string) {
   const JRPCprovider = new ethers.providers.JsonRpcProvider(JRPCFromId.get(id));
@@ -95,6 +89,25 @@ const getNftAddress = async function (chainId: string) {
   return await contract.exchangeNftAddr();
 };
 
+const getTokenContract = async function (chainId: string) {
+  const JRPCprovider = new ethers.providers.JsonRpcProvider(
+    JRPCFromId.get(chainId)
+  );
+  const destSigner = new ethers.Wallet(process.env.REACT_APP_PK!, JRPCprovider);
+  const contract = new ethers.Contract(
+    exchangeAddressFromId.get(chainId)!,
+    abiCrypto.abi,
+    destSigner
+  );
+  const tokenAddress = await contract.stakeTokenAddr();
+  const tokenContract = new ethers.Contract(
+    tokenAddress,
+    abiToken.abi,
+    destSigner
+  );
+  return tokenContract;
+};
+
 async function getLoan(address: string) {
   let loan;
   let exchangeContract;
@@ -131,11 +144,40 @@ async function getCollateralNfts() {
   return nfts;
 }
 
+async function getAccountBalances(acc: string) {
+  const balances = [];
+  for (let ct = 0; ct < 3; ct++) {
+    const tokenContract = await getTokenContract(networks[ct]);
+    balances.push(Number(await tokenContract.balanceOf(acc)));
+  }
+  return balances;
+}
+
+const getStakes = async function (acc: string): Promise<any> {
+  const stakesArray = [];
+  let unlocked = [0, 0, 0];
+  for (let ct = 0; ct < 3; ct++) {
+    const cryptoContract = getSignedContract(networks[ct]);
+    const stakesNumber = await cryptoContract.stakesNumber(acc);
+    for (let i = 0; i < stakesNumber; i++) {
+      const thisStake = await cryptoContract.stakes(acc, i);
+      const timestamp = Number(thisStake[1]);
+      const value = String(thisStake[0]);
+
+      const relativeTime = timestamp - Math.floor(Date.now() / 1000);
+      if (relativeTime <= 0) {
+        unlocked[ct] += Number(value);
+      } else {
+        const prettyTime = hdate.prettyPrint(relativeTime, { showTime: true });
+        stakesArray.push({ time: prettyTime, value, network: networks[ct] });
+      }
+    }
+  }
+  return [stakesArray, unlocked];
+};
+
 export default getSignedContract;
 export {
-  sepoliaSigned,
-  mumbaiSigned,
-  bscSigned,
   getBalance,
   exchangeAddressFromId,
   getSignedNftContract,
@@ -143,4 +185,7 @@ export {
   getNftAddress,
   getLoan,
   getCollateralNfts,
+  getAccountBalances,
+  getStakes,
+  networks,
 };
