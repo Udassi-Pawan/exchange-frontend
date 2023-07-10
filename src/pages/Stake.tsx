@@ -1,42 +1,41 @@
-import { Box, Button, Grid, Input, Typography } from "@mui/material";
+import {
+  Box,
+  Button,
+  FormControl,
+  Grid,
+  Input,
+  InputLabel,
+  MenuItem,
+  Select,
+  Typography,
+} from "@mui/material";
 import { ethers } from "ethers";
 import { useEffect, useRef, useState } from "react";
 import abiCrypto from "../contracts/exchange.json";
 import abiToken from "../contracts/stakeToken.json";
-import { exchangeAddressFromId } from "../signedContracts/signedC";
-var hdate = require("human-date");
+import getSignedContract, {
+  exchangeAddressFromId,
+  getAccountBalances,
+  getBalance,
+  getStakes,
+  networks,
+} from "../signedContracts/signedC";
+import Balance from "../components/Balance";
 
 let cryptoContract: any;
 let tokenContract: any;
 let provider: any;
 
-const getStakes = async function (acc: string): Promise<any> {
-  const stakesNumber = await cryptoContract.stakesNumber(acc);
-  let unlocked = 0;
-  const stakesArray = [];
-  for (let i = 0; i < stakesNumber; i++) {
-    const thisStake = await cryptoContract.stakes(acc, i);
-    const timestamp = Number(thisStake[1]);
-    const value = String(thisStake[0]);
-
-    const relativeTime = timestamp - Math.floor(Date.now() / 1000);
-    if (relativeTime <= 0) {
-      unlocked += Number(value);
-    } else {
-      const prettyTime = hdate.prettyPrint(relativeTime, { showTime: true });
-      stakesArray.push({ time: prettyTime, value });
-    }
-  }
-  return [stakesArray, unlocked];
-};
-
 export default function Stake() {
   const [acc, setAcc] = useState<string | null>(null);
   const [chainId, setChainId] = useState<string | null>(null);
+  const [accBalances, setAccBalances] = useState<any>(null);
+  const fromNetwork = useRef<HTMLInputElement>(null);
+  const toNetwork = useRef<HTMLInputElement>(null);
   const [stakes, setStakes] = useState<
     [{ value: string; time: string }] | null
   >(null);
-  const [unlocked, setUnlocked] = useState<Number | null>(null);
+  const [unlocked, setUnlocked] = useState<any>(null);
   const stakeValue = useRef<HTMLInputElement>(null);
   const periodValue = useRef<HTMLInputElement>(null);
   const redeemValue = useRef<HTMLInputElement>(null);
@@ -52,7 +51,7 @@ export default function Stake() {
     (async function () {
       provider = new ethers.providers.Web3Provider(window.ethereum);
       await provider.send("eth_requestAccounts", []);
-      setAcc((await provider.listAccounts())[0].address);
+      setAcc((await provider.listAccounts())[0]);
       const signer = await provider.getSigner();
       const { chainId } = await provider.getNetwork();
       const chainIdString = String(chainId);
@@ -69,6 +68,7 @@ export default function Stake() {
       const [stakesArray, unlockedValue] = await getStakes(acc!);
       setStakes(stakesArray!);
       setUnlocked(unlockedValue);
+      setAccBalances(await getAccountBalances(acc));
     })();
   }, [acc]);
 
@@ -83,11 +83,35 @@ export default function Stake() {
     setUnlocked(unlockedValue);
   };
   const withdrawHandler = async () => {
-    const tx = await cryptoContract.withdrawStakedEth(
-      redeemValue.current!.value
-    );
-    const receipt = await tx.wait();
-    console.log(receipt);
+    let total = 0;
+    const redeemAmount = Number(redeemValue.current!.value);
+    if (unlocked[0] + unlocked[1] + unlocked[2] < redeemAmount) return;
+    for (let i = 0; i < 3; i++) {
+      const exchangeContract = getSignedContract(networks[i]);
+      if (total + unlocked[i] >= redeemAmount) {
+        console.log("burning final");
+        const burnTx = await exchangeContract.burnStakedEth(
+          acc,
+          redeemAmount - total
+        );
+        const recBurnTx = await burnTx.wait();
+        total += redeemAmount - total;
+        break;
+      } else {
+        console.log("burning", unlocked[i], networks[i]);
+        const burnTx = await exchangeContract.burnStakedEth(acc, unlocked[i]);
+        const recBurnTx = await burnTx.wait();
+        total += unlocked[i];
+      }
+    }
+    if (total == redeemAmount) {
+      console.log("transfering eth");
+      const exchangeContract = getSignedContract(toNetwork.current!.value);
+      const transferTx = await exchangeContract.withdrawEth(acc, total);
+      const recTransferTx = await transferTx.wait();
+      console.log(recTransferTx);
+    }
+
     const [stakesArray, unlockedValue] = await getStakes(acc!);
     setStakes(stakesArray!);
     setUnlocked(unlockedValue);
@@ -96,6 +120,7 @@ export default function Stake() {
   return (
     <>
       <Box>
+        <Balance />
         <Typography>{acc}</Typography>
         <Typography>{chainId}</Typography>
         <Box>
@@ -113,7 +138,13 @@ export default function Stake() {
         </Box>
       </Box>
       <Box>
-        <Typography>unlocked : {String(unlocked)}</Typography>
+        {unlocked && (
+          <Box>
+            <Typography>Unlocked Seploia tokens : {unlocked[0]}</Typography>
+            <Typography>Unlocked Mumbai tokens : {unlocked[1]}</Typography>
+            <Typography>Unlocked BSC tokens : {unlocked[2]}</Typography>
+          </Box>
+        )}{" "}
       </Box>
       <Box>
         <Input placeholder="value" inputRef={stakeValue} />
@@ -122,6 +153,14 @@ export default function Stake() {
       </Box>
       <Box>
         <Input placeholder="value" inputRef={redeemValue} />
+        <FormControl sx={{ m: 1, minWidth: 80 }}>
+          <InputLabel>To</InputLabel>
+          <Select inputRef={toNetwork}>
+            <MenuItem value={"11155111"}>Sepolia</MenuItem>
+            <MenuItem value={"80001"}>Mumbai</MenuItem>
+            <MenuItem value={"97"}>BSC</MenuItem>
+          </Select>
+        </FormControl>
         <Button onClick={withdrawHandler}>Withdraw</Button>
       </Box>
     </>
