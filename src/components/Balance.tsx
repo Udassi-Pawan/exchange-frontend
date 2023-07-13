@@ -6,14 +6,12 @@ import { getBalance } from "../signedContracts/signedC";
 export default function Balance() {
   const [sepoliaBalance, setSepoliaBalance] = useState<string | null>(null);
   const [mumbaiBalance, setMumbaiBalance] = useState<string | null>(null);
-  const [bscBalance, setBscBalance] = useState<string | null>(null);
-
+  
   useEffect(() => {
     (async function () {
       const provider = new ethers.providers.Web3Provider(window.ethereum);
       setSepoliaBalance(await getBalance("11155111"));
       setMumbaiBalance(await getBalance("80001"));
-      setBscBalance(await getBalance("97"));
     })();
   }, []);
 
@@ -21,7 +19,6 @@ export default function Balance() {
     <Box>
       <Typography>Sepolia Balance : {sepoliaBalance}</Typography>
       <Typography>Mumbai Balance : {mumbaiBalance}</Typography>
-      <Typography>Bsc Balance : {bscBalance}</Typography>
     </Box>
   );
 }

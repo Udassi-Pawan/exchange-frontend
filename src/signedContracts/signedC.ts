@@ -6,19 +6,17 @@ var hdate = require("human-date");
 
 const sepoliaURL = String(process.env.REACT_APP_SEPOLIA_URL);
 
-const networks = ["11155111", "80001", "97"];
+const networks = ["11155111", "80001"];
 const JRPCFromId = new Map([
   ["11155111", sepoliaURL],
   [
     "80001",
-    "https://matic.getblock.io/04f401f9-44f5-4841-b934-71157c95af64/testnet/",
+    "https://polygon-testnet.blastapi.io/2e3e0777-ba8f-4cf1-8f77-2aac489b3274",
   ],
-  ["97", "https://bsc-testnet.publicnode.com"],
 ]);
 const exchangeAddressFromId = new Map([
-  ["11155111", "0x2554eFC6bc5d6738019c02DAC274e7A1b7aDE990"],
-  ["80001", "0x26595294c31126CBC60Ce34D72AB3A2f1C9E4168"],
-  ["97", "0x670E9c8cb57b2C924dac907b214415C26D656693"],
+  ["11155111", "0x409a61d30f851161b11409eDb5042A643C7462e9"],
+  ["80001", "0x35019d4A9880c5fc86DdA76a72303b5945177650 "],
 ]);
 
 function getSignedContract(id: string) {
@@ -58,7 +56,7 @@ async function getBalance(id: string) {
 const getNfts = async function (curAcc: string): Promise<any> {
   let nftContract;
   const myNfts = [];
-  for (let ct = 0; ct < 3; ct++) {
+  for (let ct = 0; ct < 2; ct++) {
     nftContract = await getSignedNftContract(networks[ct]);
     const count = Number(await nftContract?.totalSupply());
     for (let i = 0; i < count; i++) {
@@ -108,45 +106,44 @@ const getTokenContract = async function (chainId: string) {
   return tokenContract;
 };
 
-async function getLoan(address: string) {
-  let loan;
-  let exchangeContract;
-  for (let ct = 0; ct < 3; ct++) {
-    exchangeContract = getSignedContract(networks[ct]);
-    loan = await exchangeContract.checkLoan(address);
-    if (loan.set)
-      return { ...loan, loanNetwork: networks[ct], borrower: address };
-  }
-  return null;
-}
-
-async function getCollateralNfts() {
+async function getCollateralNfts(chainId: string) {
   const nfts: any = [];
-  for (let ct = 0; ct < 2; ct++) {
-    const exchangeContract = getSignedContract(networks[ct]);
-    const num = Number(await exchangeContract.usersCount());
-    for (let i = 0; i < num; i++) {
-      const curUser = await exchangeContract.getUser(i);
-      const curUserLoan = await exchangeContract.checkLoan(curUser);
-      console.log(curUserLoan);
-      const curTimestamp = Math.ceil(Number(Date.now()) / 1000);
-      const expiry = Number(curUserLoan.cutOffTimestamp);
-      const nftContract = await getSignedNftContract(curUserLoan.nftChainId);
-      if (expiry < curTimestamp) {
-        const nftUriLoc = await nftContract.tokenURI(curUserLoan.nftTokenId);
-        let nftData = await fetch(nftUriLoc);
-        nftData = await nftData.json();
-        nfts.push({ ...nftData, tokenId: i, network: curUserLoan.nftChainId });
-      }
+  const exchangeContract = getSignedContract(chainId);
+  const num = Number(await exchangeContract.usersCount());
+  console.log(num);
+  for (let i = 0; i < num; i++) {
+    const curUser = await exchangeContract.users(i);
+    const curUserLoan = await exchangeContract.loan(curUser);
+    console.log(curUserLoan);
+    const curTimestamp = Math.ceil(Number(Date.now()) / 1000);
+    const expiry = Number(curUserLoan.cutOffTimestamp);
+    const nftContract = await getSignedNftContract(chainId);
+    if (expiry < curTimestamp) {
+      const nftUriLoc = await nftContract.tokenURI(curUserLoan.nftTokenId);
+      let nftData = await fetch(nftUriLoc);
+      nftData = await nftData.json();
+      nfts.push({
+        ...nftData,
+        tokenId: i,
+        borrower: curUser,
+        price: curUserLoan.amount,
+      });
     }
   }
 
   return nfts;
 }
 
+async function getLoan(address: string, chainId: string) {
+  const exchangeContract = getSignedContract(chainId);
+  const loan = await exchangeContract.loan(address);
+  if (loan.set) return loan;
+  return null;
+}
+
 async function getAccountBalances(acc: string) {
   const balances = [];
-  for (let ct = 0; ct < 3; ct++) {
+  for (let ct = 0; ct < 2; ct++) {
     const tokenContract = await getTokenContract(networks[ct]);
     balances.push(Number(await tokenContract.balanceOf(acc)));
   }
@@ -156,7 +153,7 @@ async function getAccountBalances(acc: string) {
 const getStakes = async function (acc: string): Promise<any> {
   const stakesArray = [];
   let unlocked = [0, 0, 0];
-  for (let ct = 0; ct < 3; ct++) {
+  for (let ct = 0; ct < 2; ct++) {
     const cryptoContract = getSignedContract(networks[ct]);
     const stakesNumber = await cryptoContract.stakesNumber(acc);
     for (let i = 0; i < stakesNumber; i++) {
@@ -183,9 +180,9 @@ export {
   getSignedNftContract,
   getNfts,
   getNftAddress,
-  getLoan,
   getCollateralNfts,
   getAccountBalances,
+  getLoan,
   getStakes,
   networks,
 };
