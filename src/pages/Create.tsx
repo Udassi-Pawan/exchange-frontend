@@ -20,6 +20,25 @@ const auth =
   "Basic " + Buffer.from(projectId + ":" + projectSecret).toString("base64");
 let provider: any;
 
+const mumbaiContract = getSignedContract("80001");
+const sepoliaContract = getSignedContract("11155111");
+
+mumbaiContract.on("nftTransferAttested", async (nonce) => {
+  setTimeout(async () => {
+    console.log("minting ", nonce);
+    const tx = await mumbaiContract.mintTransferedNft(nonce);
+    console.log(await tx.wait());
+  }, 3000);
+});
+
+sepoliaContract.on("nftTransferAttested", async (nonce) => {
+  setTimeout(async () => {
+    console.log("minting ", nonce);
+    const tx = await sepoliaContract.mintTransferedNft(nonce);
+    console.log(await tx.wait());
+  }, 3000);
+});
+
 export default function Create() {
   const [acc, setAcc] = useState<string | null>(null);
   const [chainId, setChainId] = useState<string | null>(null);
@@ -56,19 +75,13 @@ export default function Create() {
         abiExchange.abi,
         signer
       );
-      exchangeContract = new ethers.Contract(
-        contractAddress!,
-        abiExchange.abi,
-        signer
-      );
       const nftContractAddress = await exchangeContract.exchangeNftAddr();
-
       nftContract = new ethers.Contract(
         nftContractAddress!,
         abiNFT.abi,
         signer
       );
-      setMyNfts(await getNfts(acc!));
+      if (acc) setMyNfts(await getNfts(acc!));
     })();
   }, [acc]);
 
@@ -113,35 +126,17 @@ export default function Create() {
     setMyNfts(await getNfts(acc!));
   };
 
-  const sendHandler = async function () {
-    const destNetworkId = destNetwork.current!.value;
-    const tokenId = itemId.current!.value;
-    const owner = acc;
-    const transferTx = await nftContract.transferFrom(
-      acc,
-      "0xe24fB10c138B1eB28D146dFD2Bb406FAE55176b4",
-      tokenId
+  const accessHandler = async function () {
+    const tx = await nftContract.setApprovalForAll(
+      exchangeContract.address,
+      true
     );
-    await transferTx.wait();
-    const destContract = getSignedContract(destNetworkId);
-
-    const srcContractSigned = getSignedContract(chainId!);
-    const nftUriLoc = await nftContract.tokenURI(tokenId);
-    const checkOwner = await nftContract.ownerOf(tokenId);
-    if (checkOwner == "0xe24fB10c138B1eB28D146dFD2Bb406FAE55176b4") {
-      console.log("Minting NFT");
-      const burnTx = await srcContractSigned.transferFrom(
-        "0xe24fB10c138B1eB28D146dFD2Bb406FAE55176b4",
-        "0x000000000000000000000000000000000000dead",
-        tokenId
-      );
-      const resBurn = await burnTx.wait();
-      console.log(resBurn);
-      const mintTx = await destContract.safeMint(owner, nftUriLoc);
-      const res = await mintTx.wait();
-    } else {
-      alert("NFT Not Transfered");
-    }
+    console.log(await tx.wait());
+  };
+  const sendHandler = async function () {
+    const tokenId = itemId.current!.value;
+    const sendTx = await exchangeContract.transferToDead(tokenId);
+    console.log(await sendTx.wait());
   };
   return (
     <div>
@@ -168,8 +163,8 @@ export default function Create() {
         <select ref={destNetwork}>
           {chainId != "11155111" && <option value="11155111">Sepolia</option>}
           {chainId != "80001" && <option value="80001">Polygon</option>}
-          {chainId != "97" && <option value="97">BSC</option>}
         </select>
+        <button onClick={accessHandler}>Approve Access</button>
         <button onClick={sendHandler}>Send to Network</button>
       </div>
     </div>

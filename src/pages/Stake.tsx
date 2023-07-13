@@ -16,7 +16,6 @@ import abiToken from "../contracts/stakeToken.json";
 import getSignedContract, {
   exchangeAddressFromId,
   getAccountBalances,
-  getBalance,
   getStakes,
   networks,
 } from "../signedContracts/signedC";
@@ -83,35 +82,10 @@ export default function Stake() {
     setUnlocked(unlockedValue);
   };
   const withdrawHandler = async () => {
-    let total = 0;
     const redeemAmount = Number(redeemValue.current!.value);
-    if (unlocked[0] + unlocked[1] + unlocked[2] < redeemAmount) return;
-    for (let i = 0; i < 3; i++) {
-      const exchangeContract = getSignedContract(networks[i]);
-      if (total + unlocked[i] >= redeemAmount) {
-        console.log("burning final");
-        const burnTx = await exchangeContract.burnStakedEth(
-          acc,
-          redeemAmount - total
-        );
-        const recBurnTx = await burnTx.wait();
-        total += redeemAmount - total;
-        break;
-      } else {
-        console.log("burning", unlocked[i], networks[i]);
-        const burnTx = await exchangeContract.burnStakedEth(acc, unlocked[i]);
-        const recBurnTx = await burnTx.wait();
-        total += unlocked[i];
-      }
-    }
-    if (total == redeemAmount) {
-      console.log("transfering eth");
-      const exchangeContract = getSignedContract(toNetwork.current!.value);
-      const transferTx = await exchangeContract.withdrawEth(acc, total);
-      const recTransferTx = await transferTx.wait();
-      console.log(recTransferTx);
-    }
-
+    const transferTx = await cryptoContract.withdrawStakedEth(redeemAmount);
+    const recTransferTx = await transferTx.wait();
+    console.log(recTransferTx);
     const [stakesArray, unlockedValue] = await getStakes(acc!);
     setStakes(stakesArray!);
     setUnlocked(unlockedValue);
@@ -142,9 +116,8 @@ export default function Stake() {
           <Box>
             <Typography>Unlocked Seploia tokens : {unlocked[0]}</Typography>
             <Typography>Unlocked Mumbai tokens : {unlocked[1]}</Typography>
-            <Typography>Unlocked BSC tokens : {unlocked[2]}</Typography>
           </Box>
-        )}{" "}
+        )}
       </Box>
       <Box>
         <Input placeholder="value" inputRef={stakeValue} />
@@ -153,14 +126,6 @@ export default function Stake() {
       </Box>
       <Box>
         <Input placeholder="value" inputRef={redeemValue} />
-        <FormControl sx={{ m: 1, minWidth: 80 }}>
-          <InputLabel>To</InputLabel>
-          <Select inputRef={toNetwork}>
-            <MenuItem value={"11155111"}>Sepolia</MenuItem>
-            <MenuItem value={"80001"}>Mumbai</MenuItem>
-            <MenuItem value={"97"}>BSC</MenuItem>
-          </Select>
-        </FormControl>
         <Button onClick={withdrawHandler}>Withdraw</Button>
       </Box>
     </>
