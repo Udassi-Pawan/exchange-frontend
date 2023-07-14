@@ -133,7 +133,7 @@ export default function Loan() {
           </div>
         ))}
       </div>
-      <Balance />
+      {/* <Balance /> */}
       {loan != null && (
         <Box>
           <Typography>amount : {String(loan.amount)}</Typography>

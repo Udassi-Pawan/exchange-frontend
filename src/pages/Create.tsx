@@ -8,12 +8,15 @@ import getSignedContract, {
   exchangeAddressFromId,
   getNfts,
 } from "../signedContracts/signedC";
+import "./Create.css";
+import NavBar from "../components/NavBar";
+import Navbar from "../components/NavBar";
+import CssBaseline from "@mui/material/CssBaseline";
+import { Box } from "@mui/material";
 
 const sepoliaURL = String(process.env.REACT_APP_SEPOLIA_URL);
-
 const projectId = process.env.REACT_APP_PROJECT_KEY;
 const projectSecret = process.env.REACT_APP_PROJECT_SECRET;
-
 let exchangeContract: any;
 let nftContract: any;
 const auth =
@@ -23,7 +26,7 @@ let provider: any;
 const mumbaiContract = getSignedContract("80001");
 const sepoliaContract = getSignedContract("11155111");
 
-mumbaiContract.on("nftTransferAttested", async (nonce) => {
+mumbaiContract.on("transactionAttested", async (nonce) => {
   setTimeout(async () => {
     console.log("minting ", nonce);
     const tx = await mumbaiContract.mintTransferedNft(nonce);
@@ -31,7 +34,7 @@ mumbaiContract.on("nftTransferAttested", async (nonce) => {
   }, 3000);
 });
 
-sepoliaContract.on("nftTransferAttested", async (nonce) => {
+sepoliaContract.on("transactionAttested", async (nonce) => {
   setTimeout(async () => {
     console.log("minting ", nonce);
     const tx = await sepoliaContract.mintTransferedNft(nonce);
@@ -65,11 +68,18 @@ export default function Create() {
     (async function () {
       provider = new ethers.providers.Web3Provider(window.ethereum);
       setAcc((await provider.listAccounts())[0]);
+      const account = (await provider.listAccounts())[0];
+      setMyNfts(await getNfts(account));
+    })();
+  }, [acc]);
+
+  useEffect(() => {
+    (async function () {
+      provider = new ethers.providers.Web3Provider(window.ethereum);
       const signer = await provider.getSigner();
       const { chainId } = await provider.getNetwork();
-      const chainIdString = String(chainId);
-      setChainId(chainIdString);
-      let contractAddress = exchangeAddressFromId.get(chainIdString);
+      setChainId(String(chainId));
+      let contractAddress = exchangeAddressFromId.get(String(chainId));
       exchangeContract = new ethers.Contract(
         contractAddress!,
         abiExchange.abi,
@@ -81,9 +91,8 @@ export default function Create() {
         abiNFT.abi,
         signer
       );
-      if (acc) setMyNfts(await getNfts(acc!));
     })();
-  }, [acc]);
+  }, []);
 
   const image = useRef<HTMLInputElement>(null);
   const destNetwork = useRef<HTMLSelectElement>(null);
@@ -114,15 +123,10 @@ export default function Create() {
     );
     const nftIpfsAddress = `https://ipfs.io/ipfs/${result2.path}`;
     console.log(nftIpfsAddress);
-    console.log(acc);
     const mintTx = await nftContract.safeMint(acc, nftIpfsAddress);
 
     await mintTx.wait();
-    console.log(
-      await nftContract.balanceOf(acc),
-      acc,
-      await nftContract.totalSupply()
-    );
+
     setMyNfts(await getNfts(acc!));
   };
 
@@ -136,10 +140,11 @@ export default function Create() {
   const sendHandler = async function () {
     const tokenId = itemId.current!.value;
     const sendTx = await exchangeContract.transferToDead(tokenId);
-    console.log(await sendTx.wait());
   };
   return (
-    <div>
+    <Box>
+      <CssBaseline></CssBaseline>
+      <Navbar></Navbar>
       <h1>{chainId}</h1>
       <h2>{acc} </h2>
       <input ref={image} type="file"></input>
@@ -167,6 +172,6 @@ export default function Create() {
         <button onClick={accessHandler}>Approve Access</button>
         <button onClick={sendHandler}>Send to Network</button>
       </div>
-    </div>
+    </Box>
   );
 }
