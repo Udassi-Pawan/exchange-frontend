@@ -9,22 +9,37 @@ import Loan from "./pages/Loan";
 import { ThemeProvider } from "@mui/material/styles";
 import mytheme from "./MuiTheme";
 import Test from "./pages/Test";
+import Layout from "./components/Layout";
+import CollateralNfts from "./pages/CollateralNfts";
 function App() {
   return (
     <ThemeProvider theme={mytheme}>
       <Router>
         <Switch>
           <Route path="/create">
-            <Create />
+            <Layout>
+              <Create />
+            </Layout>
           </Route>
           <Route path="/stake">
-            <Stake />
+            <Layout>
+              <Stake />
+            </Layout>
           </Route>
           <Route path="/exchange">
-            <Exchange />
+            <Layout>
+              <Exchange />
+            </Layout>
           </Route>
           <Route exact path="/">
-            <Loan />
+            <Layout>
+              <Loan />
+            </Layout>
+          </Route>
+          <Route exact path="/market">
+            <Layout>
+              <CollateralNfts />
+            </Layout>
           </Route>
           <Route path="/test">
             <Test />

@@ -11,14 +11,23 @@ const JRPCFromId = new Map([
   ["11155111", sepoliaURL],
   [
     "80001",
-    "https://matic.getblock.io/04f401f9-44f5-4841-b934-71157c95af64/testnet/",
+    "https://polygon-testnet.blastapi.io/2e3e0777-ba8f-4cf1-8f77-2aac489b3274",
   ],
 ]);
-// "https://polygon-testnet.blastapi.io/2e3e0777-ba8f-4cf1-8f77-2aac489b3274",
+const nameFromId = new Map([
+  ["11155111", "Sepolia"],
+  ["80001", "Mumbai"],
+]);
+// "https://matic.getblock.io/04f401f9-44f5-4841-b934-71157c95af64/testnet/",
 
 const exchangeAddressFromId = new Map([
   ["11155111", "0x00e91A750B5DD0237cF0A0623BB628C1B1724101"],
   ["80001", "0x8F07078E70fe55316cDC106ef06A03Bc1fA8797F"],
+]);
+
+const networkIdInHex = new Map([
+  ["11155111", "0xaa36a7"],
+  ["80001", "0x13881"],
 ]);
 
 function getSignedContract(id: string) {
@@ -186,4 +195,6 @@ export {
   getLoan,
   getStakes,
   networks,
+  nameFromId,
+  networkIdInHex,
 };

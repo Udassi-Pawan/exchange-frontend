@@ -10,6 +10,7 @@ import {
   Button,
   Input,
   Typography,
+  Stack,
 } from "@mui/material";
 import { ethers } from "ethers";
 import { useEffect, useRef, useState } from "react";
@@ -53,29 +54,38 @@ export default function Exchange() {
     console.log(await tx.wait());
   };
   return (
-    <>
-      <Box>
-        <Typography>Contract Sepolia Balance : {sepoliaBalance}</Typography>
-        <Typography>Contract Mumbai Balance : {mumbaiBalance}</Typography>
-      </Box>
-      <Box>
-        <FormControl sx={{ m: 1, minWidth: 80 }}>
-          <InputLabel>From</InputLabel>
-          <Select inputRef={fromNetwork} id="demo-simple-select">
-            <MenuItem value={"11155111"}>Sepolia</MenuItem>
-            <MenuItem value={"80001"}>Mumbai</MenuItem>
-          </Select>
-        </FormControl>
-        <FormControl sx={{ m: 1, minWidth: 80 }}>
-          <InputLabel>To</InputLabel>
-          <Select inputRef={toNetwork} id="demo-simple-select">
-            <MenuItem value={"11155111"}>Sepolia</MenuItem>
-            <MenuItem value={"80001"}>Mumbai</MenuItem>
-          </Select>
-        </FormControl>
-        <Input inputRef={transferValue}></Input>
-        <Button onClick={transferHandler}>Transfer</Button>
-      </Box>
-    </>
+    <Box>
+      <Stack m={10} alignItems={"center"} spacing={20}>
+        <Stack spacing={2}>
+          <Typography sx={{ textDecoration: "underline" }}>
+            Contract Sepolia Balance : {sepoliaBalance}
+          </Typography>
+          <Typography sx={{ textDecoration: "underline" }}>
+            {" "}
+            Contract Mumbai Balance : {mumbaiBalance}
+          </Typography>
+        </Stack>
+        <Stack direction={"row"} alignItems={"center"}>
+          <FormControl variant="standard" sx={{ m: 1, minWidth: 80 }}>
+            <InputLabel>To</InputLabel>
+            <Select inputRef={toNetwork}>
+              {chainId != "11155111" && (
+                <MenuItem value={"11155111"}>Sepolia</MenuItem>
+              )}
+              {chainId != "80001" && (
+                <MenuItem value={"80001"}>Mumbai</MenuItem>
+              )}
+            </Select>
+          </FormControl>
+
+          <Input
+            placeholder="Value"
+            type="number"
+            inputRef={transferValue}
+          ></Input>
+          <Button onClick={transferHandler}>Transfer</Button>
+        </Stack>
+      </Stack>
+    </Box>
   );
 }

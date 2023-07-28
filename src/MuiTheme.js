@@ -26,9 +26,10 @@ const mytheme = createTheme({
       lettingSpacing: "-0.01562em",
     },
     body2: {
-      fontSize: "1rem",
-      fontWeight: 900,
+      fontSize: "0.8rem",
+      fontWeight: 800,
       fontFamily: "Roboto",
+      letterSpacing: 2,
     },
   },
 });

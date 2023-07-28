@@ -9,12 +9,21 @@ import getSignedContract, {
   getNfts,
 } from "../signedContracts/signedC";
 import "./Create.css";
-import NavBar from "../components/NavBar";
-import Navbar from "../components/NavBar";
-import CssBaseline from "@mui/material/CssBaseline";
-import { Box } from "@mui/material";
+import {
+  Box,
+  Button,
+  FormControl,
+  Grid,
+  Input,
+  InputLabel,
+  MenuItem,
+  Select,
+  Stack,
+  TextField,
+} from "@mui/material";
+import NftCard from "../components/NftCard";
+import { useTheme } from "@mui/material/styles";
 
-const sepoliaURL = String(process.env.REACT_APP_SEPOLIA_URL);
 const projectId = process.env.REACT_APP_PROJECT_KEY;
 const projectSecret = process.env.REACT_APP_PROJECT_SECRET;
 let exchangeContract: any;
@@ -43,6 +52,8 @@ sepoliaContract.on("transactionAttested", async (nonce) => {
 });
 
 export default function Create() {
+  const theme = useTheme();
+
   const [acc, setAcc] = useState<string | null>(null);
   const [chainId, setChainId] = useState<string | null>(null);
   const [myNfts, setMyNfts] = useState<
@@ -142,36 +153,58 @@ export default function Create() {
     const sendTx = await exchangeContract.transferToDead(tokenId);
   };
   return (
-    <Box>
-      <CssBaseline></CssBaseline>
-      <Navbar></Navbar>
-      <h1>{chainId}</h1>
-      <h2>{acc} </h2>
-      <input ref={image} type="file"></input>
-      <input ref={name} placeholder="name"></input>
-      <input ref={desc} placeholder="description"></input>
-      <button onClick={clickHandler}>Mint</button>
+    <Stack
+      spacing={5}
+      alignItems={"center"}
+      justifyContent={"space-between"}
+      m={2}
+    >
+      <Box>
+        <Grid container sx={{ m: 2 }} gap={2}>
+          {myNfts?.map((i) => (
+            <Grid item key={i.image}>
+              <NftCard
+                image={i.image}
+                desc={i.description}
+                name={i.name}
+                itemId={i.tokenId}
+              ></NftCard>
+            </Grid>
+          ))}
+        </Grid>
+      </Box>
+      <Stack direction={"row"} alignItems={"center"} spacing={2}>
+        <Input
+          inputRef={image}
+          type="file"
+          sx={{ color: theme.palette.primary.main }}
+        ></Input>
+        <Input inputRef={name} placeholder="name"></Input>
+        <TextField
+          multiline
+          rows={2}
+          maxRows={4}
+          inputRef={desc}
+          placeholder="description"
+        ></TextField>
+        <Button onClick={clickHandler}>Mint</Button>
+      </Stack>
 
-      <div style={{ display: "flex", gap: "1rem" }}>
-        {myNfts?.map((i) => (
-          <div key={i.image}>
-            <p>name : {i.name}</p>
-            <p>tokenId : {String(i.tokenId)}</p>
-            <p> description: {i.description}</p>
-            <p> network: {i.network}</p>
-            <img style={{ height: "200px" }} src={i.image}></img>
-          </div>
-        ))}
-      </div>
-      <div>
-        <input ref={itemId} placeholder="itemId"></input>
-        <select ref={destNetwork}>
-          {chainId != "11155111" && <option value="11155111">Sepolia</option>}
-          {chainId != "80001" && <option value="80001">Polygon</option>}
-        </select>
-        <button onClick={accessHandler}>Approve Access</button>
-        <button onClick={sendHandler}>Send to Network</button>
-      </div>
-    </Box>
+      <Stack direction={"row"} alignItems={"center"} spacing={2}>
+        <Input ref={itemId} placeholder="itemId"></Input>
+        <FormControl variant="standard" sx={{ m: 1, minWidth: 120 }}>
+          <InputLabel>Send To</InputLabel>
+          <Select inputRef={destNetwork} id="demo-simple-select">
+            {chainId != "11155111" && (
+              <MenuItem value={"11155111"}>Sepolia</MenuItem>
+            )}
+            {chainId != "80001" && <MenuItem value={"80001"}>Mumbai</MenuItem>}
+          </Select>
+        </FormControl>
+
+        <Button onClick={accessHandler}>Approve Access</Button>
+        <Button onClick={sendHandler}>Transfer</Button>
+      </Stack>
+    </Stack>
   );
 }
