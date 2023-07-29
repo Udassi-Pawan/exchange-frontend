@@ -15,36 +15,31 @@ function App() {
   return (
     <ThemeProvider theme={mytheme}>
       <Router>
-        <Switch>
-          <Route path="/create">
-            <Layout>
+        <Layout>
+          <Switch>
+            <Route path="/create">
               <Create />
-            </Layout>
-          </Route>
-          <Route path="/stake">
-            <Layout>
+            </Route>
+            <Route path="/stake">
               <Stake />
-            </Layout>
-          </Route>
-          <Route path="/exchange">
-            <Layout>
+            </Route>
+            <Route path="/exchange">
               <Exchange />
-            </Layout>
-          </Route>
-          <Route exact path="/">
-            <Layout>
+            </Route>
+            <Route exact path="/loan">
               <Loan />
-            </Layout>
-          </Route>
-          <Route exact path="/market">
-            <Layout>
+            </Route>
+            <Route exact path="/market">
               <CollateralNfts />
-            </Layout>
-          </Route>
-          <Route path="/test">
-            <Test />
-          </Route>
-        </Switch>
+            </Route>
+            <Route path="/test">
+              <Test />
+            </Route>
+            <Route path="/">
+              
+            </Route>
+          </Switch>
+        </Layout>
       </Router>
     </ThemeProvider>
   );
