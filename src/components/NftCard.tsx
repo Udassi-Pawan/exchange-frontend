@@ -10,10 +10,12 @@ export default function NftCard(props: any) {
         </Box>
         <Box className="content">
           <Typography className="heading">{props.name}</Typography>
-          {props.itemId && (
+          {props.itemId != null ? (
             <Typography className="itemId">itemId: {props.itemId}</Typography>
+          ) : (
+            ""
           )}
-          {props.price && (
+          {props.price != null && (
             <Typography className="itemId">price: {props.price}</Typography>
           )}
           <Typography className="desc">{props.desc}</Typography>
