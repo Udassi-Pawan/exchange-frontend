@@ -4,24 +4,11 @@ import abiNFT from "../contracts/decentralised/ExchangeNFT.json";
 import abiToken from "../contracts/decentralised/stakeToken.json";
 var hdate = require("human-date");
 
-const sepoliaURL = String(process.env.REACT_APP_SEPOLIA_URL);
-
 const networks = ["11155111", "80001"];
-const JRPCFromId = new Map([
-  ["11155111", sepoliaURL],
-  [
-    "80001",
-    "https://polygon-testnet.blastapi.io/2e3e0777-ba8f-4cf1-8f77-2aac489b3274",
-  ],
-]);
-const nameFromId = new Map([
-  ["11155111", "Sepolia"],
-  ["80001", "Mumbai"],
-  ["97", "BSC"],
-]);
+
 // "https://matic.getblock.io/04f401f9-44f5-4841-b934-71157c95af64/testnet/",
 
-const exchangeAddressFromId = new Map([
+const exchangeAddressFromIdDecentralised = new Map([
   ["11155111", "0x00e91A750B5DD0237cF0A0623BB628C1B1724101"],
   ["80001", "0x8F07078E70fe55316cDC106ef06A03Bc1fA8797F"],
 ]);
@@ -31,12 +18,26 @@ const networkIdInHex = new Map([
   ["80001", "0x13881"],
   ["97", "0x61"],
 ]);
+const nameFromId = new Map([
+  ["11155111", "Sepolia"],
+  ["80001", "Mumbai"],
+  ["97", "BSC"],
+]);
+const sepoliaURL = String(process.env.REACT_APP_SEPOLIA_URL);
 
-function getSignedContract(id: string) {
+const JRPCFromId = new Map([
+  ["11155111", sepoliaURL],
+  [
+    "80001",
+    "https://polygon-testnet.blastapi.io/2e3e0777-ba8f-4cf1-8f77-2aac489b3274",
+  ],
+]);
+
+function getSignedContractCentralised(id: string) {
   const JRPCprovider = new ethers.providers.JsonRpcProvider(JRPCFromId.get(id));
   const destSigner = new ethers.Wallet(process.env.REACT_APP_PK!, JRPCprovider);
   const contract = new ethers.Contract(
-    exchangeAddressFromId.get(id)!,
+    exchangeAddressFromIdDecentralised.get(id)!,
     abiCrypto.abi,
     destSigner
   );
@@ -47,7 +48,7 @@ async function getSignedNftContract(id: string) {
   const JRPCprovider = new ethers.providers.JsonRpcProvider(JRPCFromId.get(id));
   const destSigner = new ethers.Wallet(process.env.REACT_APP_PK!, JRPCprovider);
   const contract = new ethers.Contract(
-    exchangeAddressFromId.get(id)!,
+    exchangeAddressFromIdDecentralised.get(id)!,
     abiCrypto.abi,
     destSigner
   );
@@ -62,7 +63,9 @@ async function getSignedNftContract(id: string) {
 
 async function getBalance(id: string) {
   const provider = new ethers.providers.JsonRpcProvider(JRPCFromId.get(id));
-  return String(await provider.getBalance(exchangeAddressFromId.get(id)!));
+  return String(
+    await provider.getBalance(exchangeAddressFromIdDecentralised.get(id)!)
+  );
 }
 
 const getNfts = async function (curAcc: string): Promise<any> {
@@ -92,7 +95,7 @@ const getNftAddress = async function (chainId: string) {
   );
   const destSigner = new ethers.Wallet(process.env.REACT_APP_PK!, JRPCprovider);
   const contract = new ethers.Contract(
-    exchangeAddressFromId.get(chainId)!,
+    exchangeAddressFromIdDecentralised.get(chainId)!,
     abiCrypto.abi,
     destSigner
   );
@@ -105,7 +108,7 @@ const getTokenContract = async function (chainId: string) {
   );
   const destSigner = new ethers.Wallet(process.env.REACT_APP_PK!, JRPCprovider);
   const contract = new ethers.Contract(
-    exchangeAddressFromId.get(chainId)!,
+    exchangeAddressFromIdDecentralised.get(chainId)!,
     abiCrypto.abi,
     destSigner
   );
@@ -120,7 +123,7 @@ const getTokenContract = async function (chainId: string) {
 
 async function getCollateralNfts(chainId: string) {
   const nfts: any = [];
-  const exchangeContract = getSignedContract(chainId);
+  const exchangeContract = getSignedContractCentralised(chainId);
   const num = Number(await exchangeContract.usersCount());
   console.log(num);
   for (let i = 0; i < num; i++) {
@@ -130,7 +133,11 @@ async function getCollateralNfts(chainId: string) {
     const curTimestamp = Math.ceil(Number(Date.now()) / 1000);
     const expiry = Number(curUserLoan.cutOffTimestamp);
     const nftContract = await getSignedNftContract(chainId);
-    if (expiry < curTimestamp) {
+    const curOwner = await nftContract.ownerOf(curUserLoan.nftTokenId);
+    if (
+      expiry < curTimestamp &&
+      curOwner == "0xe24fB10c138B1eB28D146dFD2Bb406FAE55176b4"
+    ) {
       const nftUriLoc = await nftContract.tokenURI(curUserLoan.nftTokenId);
       let nftData = await fetch(nftUriLoc);
       nftData = await nftData.json();
@@ -147,7 +154,7 @@ async function getCollateralNfts(chainId: string) {
 }
 
 async function getLoan(address: string, chainId: string) {
-  const exchangeContract = getSignedContract(chainId);
+  const exchangeContract = getSignedContractCentralised(chainId);
   const loan = await exchangeContract.loan(address);
   if (loan.set) return loan;
   return null;
@@ -167,7 +174,7 @@ const getStakes = async function (acc: string, network: string): Promise<any> {
   let unlocked = 0;
   // console.log(typeof network);
   network = String(network);
-  const cryptoContract = getSignedContract(network);
+  const cryptoContract = getSignedContractCentralised(network);
   const stakesNumber = await cryptoContract.stakesNumber(acc);
   for (let i = 0; i < stakesNumber; i++) {
     const thisStake = await cryptoContract.stakes(acc, i);
@@ -184,10 +191,10 @@ const getStakes = async function (acc: string, network: string): Promise<any> {
   return [stakesArray, unlocked];
 };
 
-export default getSignedContract;
+export default getSignedContractCentralised;
 export {
   getBalance,
-  exchangeAddressFromId,
+  exchangeAddressFromIdDecentralised,
   getSignedNftContract,
   getNfts,
   getNftAddress,
