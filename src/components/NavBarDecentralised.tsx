@@ -11,19 +11,19 @@ import Typography from "@mui/material/Typography";
 import { Link } from "react-router-dom";
 import { useTheme } from "@mui/material/styles";
 import CurrencyExchangeIcon from "@mui/icons-material/CurrencyExchange";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { ethers } from "ethers";
 import { nameFromId, networkIdInHex } from "../signedContracts/signedC";
 const pages = [
-  ["CREATE", "create"],
-  ["LOAN", "/"],
-  ["STAKE", "stake"],
-  ["EXCHANGE", "exchange"],
-  ["VALIDATOR", "validator"],
-  ["MARKETPLACE", "market"],
+  ["CREATE", "/decentralised/create"],
+  ["LOAN", "/decentralised/loan"],
+  ["STAKE", "/decentralised/stake"],
+  ["EXCHANGE", "/decentralised/exchange"],
+  ["VALIDATOR", "/decentralised/validator"],
+  ["MARKETPLACE", "/decentralised/market"],
 ];
 
-export default function NavBar() {
+export default function NavBarDecentralised() {
   const theme = useTheme();
   const [acc, setAcc] = useState<string | null>(null);
   const [chainId, setChainId] = useState<string | null>(null);

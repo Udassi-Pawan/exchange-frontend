@@ -1,11 +1,11 @@
 import { Box, CssBaseline } from "@mui/material";
-import NavBar from "./NavBar";
+import NavBarCentralised from "./NavBarCentralised";
 
 const Layout = function (props: any) {
   return (
     <Box>
       <CssBaseline></CssBaseline>
-      <NavBar></NavBar>
+      <NavBarCentralised></NavBarCentralised>
       {props.children}
     </Box>
   );
