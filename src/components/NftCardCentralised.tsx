@@ -2,7 +2,7 @@ import { Box, Stack, Typography } from "@mui/material";
 import { useTheme } from "@mui/material/styles";
 
 import "./NftCardCentralised.css";
-import { nameFromId } from "../signedContracts/signedC";
+import { nameFromId } from "../signedContracts/scriptsDecentralised";
 export default function NftCardCentralised(props: any) {
   const theme = useTheme();
 

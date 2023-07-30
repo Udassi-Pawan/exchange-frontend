@@ -1,6 +1,4 @@
-import abiExchange from "../../contracts/decentralised/exchange.json";
-import { exchangeAddressFromId } from "../../signedContracts/signedC";
-import { getBalance } from "../../signedContracts/signedC";
+import { getBalance } from "../../signedContracts/scriptsDecentralised";
 import {
   Box,
   Select,
@@ -12,37 +10,17 @@ import {
   Typography,
   Stack,
 } from "@mui/material";
-import { ethers } from "ethers";
-import { useEffect, useRef, useState } from "react";
-
-let provider: any;
-let curMeta: any;
-let exchangeContract: any;
+import { useContext, useEffect, useRef, useState } from "react";
+import { MyContext } from "../../MyContext";
 
 export default function Exchange() {
-  const [acc, setAcc] = useState<string | null>(null);
-  const [chainId, setChainId] = useState<string | null>(null);
+  const { acc, chainId, exchangeContractDecentralised } = useContext(MyContext);
   const [sepoliaBalance, setSepoliaBalance] = useState<string | null>(null);
   const [mumbaiBalance, setMumbaiBalance] = useState<string | null>(null);
-  const fromNetwork = useRef<HTMLInputElement>(null);
   const transferValue = useRef<HTMLInputElement>(null);
   const toNetwork = useRef<HTMLInputElement>(null);
   useEffect(() => {
     (async function () {
-      provider = new ethers.providers.Web3Provider(window.ethereum);
-      await provider.send("eth_requestAccounts", []);
-      const signer = await provider.getSigner();
-      const { chainId } = await provider.getNetwork();
-      const chainIdString = String(chainId);
-      setChainId(chainIdString);
-      let cryptoAddress = exchangeAddressFromId.get(chainIdString);
-      setAcc((await provider.listAccounts())[0]);
-      exchangeContract = new ethers.Contract(
-        cryptoAddress!,
-        abiExchange.abi,
-        signer
-      );
-      curMeta = new ethers.Contract(cryptoAddress!, abiExchange.abi, signer);
       setSepoliaBalance(await getBalance("11155111"));
       setMumbaiBalance(await getBalance("80001"));
     })();
@@ -50,7 +28,7 @@ export default function Exchange() {
 
   const transferHandler = async function () {
     const value = transferValue.current?.value;
-    const tx = await exchangeContract.sendEthOver({ value });
+    const tx = await exchangeContractDecentralised.sendEthOver({ value });
     console.log(await tx.wait());
   };
   return (
@@ -61,7 +39,6 @@ export default function Exchange() {
             Contract Sepolia Balance : {sepoliaBalance}
           </Typography>
           <Typography sx={{ textDecoration: "underline" }}>
-            {" "}
             Contract Mumbai Balance : {mumbaiBalance}
           </Typography>
         </Stack>

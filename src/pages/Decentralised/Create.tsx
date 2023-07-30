@@ -1,14 +1,9 @@
-import { useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { Buffer } from "buffer";
-import { ethers } from "ethers";
-import abiNFT from "../../contracts/decentralised/ExchangeNFT.json";
-import abiExchange from "../../contracts/decentralised/exchange.json";
 import { create as ipfsClient } from "ipfs-http-client";
 import getSignedContract, {
-  exchangeAddressFromId,
   getNfts,
-} from "../../signedContracts/signedC";
-import "./Create.css";
+} from "../../signedContracts/scriptsDecentralised";
 import {
   Box,
   Button,
@@ -23,14 +18,13 @@ import {
 } from "@mui/material";
 import NftCard from "../../components/NftCard";
 import { useTheme } from "@mui/material/styles";
+import { MyContext } from "../../MyContext";
 
 const projectId = process.env.REACT_APP_PROJECT_KEY;
 const projectSecret = process.env.REACT_APP_PROJECT_SECRET;
-let exchangeContract: any;
-let nftContract: any;
+
 const auth =
   "Basic " + Buffer.from(projectId + ":" + projectSecret).toString("base64");
-let provider: any;
 
 const mumbaiContract = getSignedContract("80001");
 const sepoliaContract = getSignedContract("11155111");
@@ -53,9 +47,12 @@ sepoliaContract.on("transactionAttested", async (nonce) => {
 
 export default function Create() {
   const theme = useTheme();
-
-  const [acc, setAcc] = useState<string | null>(null);
-  const [chainId, setChainId] = useState<string | null>(null);
+  const {
+    acc,
+    chainId,
+    exchangeContractDecentralised,
+    nftContractDecentralised,
+  } = useContext(MyContext);
   const [myNfts, setMyNfts] = useState<
     | [
         {
@@ -68,42 +65,11 @@ export default function Create() {
       ]
     | null
   >(null);
-  window.ethereum.on("accountsChanged", async function () {
-    setAcc((await provider.listAccounts())[0].address);
-  });
-  window.ethereum.on("chainChanged", async function () {
-    window.location.reload();
-  });
-
   useEffect(() => {
     (async function () {
-      provider = new ethers.providers.Web3Provider(window.ethereum);
-      setAcc((await provider.listAccounts())[0]);
-      const account = (await provider.listAccounts())[0];
-      setMyNfts(await getNfts(account));
+      setMyNfts(await getNfts(acc));
     })();
   }, [acc]);
-
-  useEffect(() => {
-    (async function () {
-      provider = new ethers.providers.Web3Provider(window.ethereum);
-      const signer = await provider.getSigner();
-      const { chainId } = await provider.getNetwork();
-      setChainId(String(chainId));
-      let contractAddress = exchangeAddressFromId.get(String(chainId));
-      exchangeContract = new ethers.Contract(
-        contractAddress!,
-        abiExchange.abi,
-        signer
-      );
-      const nftContractAddress = await exchangeContract.exchangeNftAddr();
-      nftContract = new ethers.Contract(
-        nftContractAddress!,
-        abiNFT.abi,
-        signer
-      );
-    })();
-  }, []);
 
   const image = useRef<HTMLInputElement>(null);
   const destNetwork = useRef<HTMLSelectElement>(null);
@@ -134,7 +100,7 @@ export default function Create() {
     );
     const nftIpfsAddress = `https://ipfs.io/ipfs/${result2.path}`;
     console.log(nftIpfsAddress);
-    const mintTx = await nftContract.safeMint(acc, nftIpfsAddress);
+    const mintTx = await nftContractDecentralised.safeMint(acc, nftIpfsAddress);
 
     await mintTx.wait();
 
@@ -142,15 +108,15 @@ export default function Create() {
   };
 
   const accessHandler = async function () {
-    const tx = await nftContract.setApprovalForAll(
-      exchangeContract.address,
+    const tx = await nftContractDecentralised.setApprovalForAll(
+      exchangeContractDecentralised.address,
       true
     );
     console.log(await tx.wait());
   };
   const sendHandler = async function () {
     const tokenId = itemId.current!.value;
-    const sendTx = await exchangeContract.transferToDead(tokenId);
+    const sendTx = await exchangeContractDecentralised.transferToDead(tokenId);
   };
   return (
     <Stack
@@ -160,7 +126,7 @@ export default function Create() {
       m={2}
     >
       <Box>
-        <Grid container sx={{ m: 2 }} gap={2}>
+        <Grid container sx={{ m: 2 }} direction={"row"} gap={2}>
           {myNfts?.map((i) => (
             <Grid item key={i.image}>
               <NftCard

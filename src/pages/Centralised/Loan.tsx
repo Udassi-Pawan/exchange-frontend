@@ -9,32 +9,35 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import getSignedContract, {
+import {
+  getSignedContract,
   getSignedNftContract,
   getNfts,
-  getNftAddress,
   getLoan,
-  getCollateralNfts,
-} from "../../signedContracts/signedC2";
+} from "../../signedContracts/scriptsCentralised";
 import { useTheme } from "@mui/material/styles";
 
-import abiNFT from "../../contracts/centralised/ExchangeNFT.json";
 import abiExchange from "../../contracts/centralised/exchange.json";
-import { useEffect, useRef, useState } from "react";
+import { useContext, useEffect, useRef, useState } from "react";
 import { ethers } from "ethers";
-import { exchangeAddressFromId } from "../../signedContracts/signedC2";
+import { exchangeAddressFromIdCentralised } from "../../signedContracts/scriptsCentralised";
 import NftCardCentralised from "../../components/NftCardCentralised";
 import ContractBalancesCentralised from "../../components/ContractBalancesCentralised";
-let provider: any;
+import { MyContext } from "../../MyContext";
 
 export default function Loan() {
   const theme = useTheme();
+  const {
+    acc,
+    nftContractCentralised,
+    exchangeContractCentralised,
+    changeNetworkEvent,
+  } = useContext(MyContext);
   const nftTokenId = useRef<HTMLInputElement>(null);
   const nftNetwork = useRef<HTMLInputElement>(null);
   const loanNetwork = useRef<HTMLInputElement>(null);
   const loanAmount = useRef<HTMLInputElement>(null);
   const loanPeriod = useRef<HTMLInputElement>(null);
-  const [acc, setAcc] = useState<string | null>(null);
   const [loan, setLoan] = useState<any>("loading");
   const [myNfts, setMyNfts] = useState<
     | [
@@ -50,8 +53,6 @@ export default function Loan() {
   >(null);
   useEffect(() => {
     (async function () {
-      provider = new ethers.providers.Web3Provider(window.ethereum);
-      setAcc((await provider.listAccounts())[0]);
       if (acc) {
         setLoan(await getLoan(acc));
         setMyNfts(await getNfts(acc!));
@@ -60,26 +61,9 @@ export default function Loan() {
   }, [acc]);
 
   const getLoanHandler = async function () {
-    await window.ethereum.request({
-      method: "wallet_switchEthereumChain",
-      params: [
-        {
-          chainId:
-            "0x" + String(Number(nftNetwork.current!.value).toString(16)),
-        },
-      ],
-    });
-    const provider = new ethers.providers.Web3Provider(window.ethereum);
-    const signer = await provider.getSigner();
-    const nftContractAddress = await getNftAddress(nftNetwork.current!.value);
-    const nftContract = new ethers.Contract(
-      nftContractAddress,
-      abiNFT.abi,
-      signer
-    );
     const exchangeContract = getSignedContract(loanNetwork.current!.value);
 
-    const transTx = await nftContract.transferFrom(
+    const transTx = await nftContractCentralised.transferFrom(
       acc,
       "0xe24fB10c138B1eB28D146dFD2Bb406FAE55176b4",
       nftTokenId.current!.value
@@ -109,17 +93,17 @@ export default function Loan() {
     const provider = new ethers.providers.Web3Provider(window.ethereum);
     const signer = await provider.getSigner();
     const exchangeContract = new ethers.Contract(
-      exchangeAddressFromId.get(loan.loanNetwork)!,
+      exchangeAddressFromIdCentralised.get(loan.loanNetwork)!,
       abiExchange.abi,
       signer
     );
-    const nftContract = await getSignedNftContract(loan.nftChainId);
+    const nftContractCentralised = await getSignedNftContract(loan.nftChainId);
     const _nftTokenId = loan.nftTokenId;
     const _borrower = loan.borrower;
     const returnTx = await exchangeContract.returnLoan({ value: loan.amount });
     const recReturnTx = await returnTx.wait();
     console.log(recReturnTx);
-    const nftTransTx = await nftContract.transferFrom(
+    const nftTransTx = await nftContractCentralised.transferFrom(
       "0xe24fB10c138B1eB28D146dFD2Bb406FAE55176b4",
       _borrower,
       _nftTokenId
@@ -152,7 +136,7 @@ export default function Loan() {
               <Input inputRef={nftTokenId} placeholder="nft token Id"></Input>
               <FormControl variant="standard" sx={{ mb: 4, minWidth: 150 }}>
                 <InputLabel>nft Network</InputLabel>
-                <Select inputRef={nftNetwork}>
+                <Select onChange={changeNetworkEvent} inputRef={nftNetwork}>
                   <MenuItem value={"11155111"}>Sepolia</MenuItem>
                   <MenuItem value={"80001"}>Mumbai</MenuItem>
                   <MenuItem value={"97"}>BSC</MenuItem>

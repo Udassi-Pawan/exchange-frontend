@@ -1,6 +1,6 @@
 import { Stack, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
-import { getBalance } from "../signedContracts/signedC2";
+import { getBalance } from "../signedContracts/scriptsCentralised";
 
 export default function ContractBalancesCentralised() {
   const [sepoliaBalance, setSepoliaBalance] = useState<string | null>(null);

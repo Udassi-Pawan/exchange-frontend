@@ -1,31 +1,16 @@
-import {
-  Box,
-  Button,
-  FormControl,
-  Grid,
-  Input,
-  InputLabel,
-  MenuItem,
-  Select,
-  Stack,
-} from "@mui/material";
-import { useEffect, useRef, useState } from "react";
+import { Box, Button, Grid, Stack } from "@mui/material";
+import { useContext, useEffect, useState } from "react";
 import {
   getCollateralNfts,
   getSignedNftContract,
-} from "../../signedContracts/signedC2";
-import { ethers } from "ethers";
+} from "../../signedContracts/scriptsCentralised";
 import NftCardCentralised from "../../components/NftCardCentralised";
-import { exchangeAddressFromId } from "../../signedContracts/signedC2";
-import abiExchange from "../../contracts/centralised/exchange.json";
-
-let provider: any;
+import { MyContext } from "../../MyContext";
 
 export default function CollateralNfts() {
-  const [acc, setAcc] = useState<string | null>(null);
+  const { acc, exchangeContractCentralised, changeNetwork } =
+    useContext(MyContext);
 
-  const collateralTokenId = useRef<HTMLInputElement>(null);
-  const collateralNetwork = useRef<HTMLInputElement>(null);
   const [collateralNfts, setCollateralNfts] = useState<
     | [
         {
@@ -47,32 +32,14 @@ export default function CollateralNfts() {
     })();
   }, []);
 
-  useEffect(() => {
-    (async function () {
-      provider = new ethers.providers.Web3Provider(window.ethereum);
-      setAcc((await provider.listAccounts())[0]);
-    })();
-  }, [acc]);
   const getCollateralHandler = async function (
     e: any,
     network: string,
-    borrower: string,
     price: string,
     tokenId: string
   ) {
-    const provider = new ethers.providers.Web3Provider(window.ethereum);
-    await provider.send("eth_requestAccounts", []);
-    const signer = await provider.getSigner();
-    const { chainId } = await provider.getNetwork();
-    const chainIdString = String(chainId);
-    let cryptoAddress = exchangeAddressFromId.get(chainIdString);
-    const exchangeContract = new ethers.Contract(
-      cryptoAddress!,
-      abiExchange.abi,
-      signer
-    );
-    console.log(exchangeContract);
-    const tranferTx = await exchangeContract.setCollateralSold(borrower, {
+    changeNetwork(network);
+    const tranferTx = await exchangeContractCentralised.acceptEth({
       value: price,
     });
     console.log(await tranferTx.wait());
@@ -98,13 +65,13 @@ export default function CollateralNfts() {
                   desc={i.description}
                   name={i.name}
                   price={String(i.price)}
+                  network={i.network}
                 ></NftCardCentralised>
                 <Button
                   onClick={(e) => {
                     getCollateralHandler(
                       e,
                       i.network,
-                      i.borrower,
                       String(i.price),
                       i.tokenId
                     );

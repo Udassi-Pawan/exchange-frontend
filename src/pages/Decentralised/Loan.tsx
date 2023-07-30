@@ -1,24 +1,21 @@
-import { Box, Button, Grid, Input, Stack, Typography } from "@mui/material";
-import { getNfts, getLoan } from "../../signedContracts/signedC";
-import abiNFT from "../../contracts/decentralised/ExchangeNFT.json";
-
-import abiExchange from "../../contracts/decentralised/exchange.json";
-import { useEffect, useRef, useState } from "react";
-import { ethers } from "ethers";
-import { exchangeAddressFromId } from "../../signedContracts/signedC";
+import { Button, Grid, Input, Stack, Typography } from "@mui/material";
+import { getNfts, getLoan } from "../../signedContracts/scriptsDecentralised";
+import { useContext, useEffect, useRef, useState } from "react";
 import { useTheme } from "@mui/material/styles";
-
 import NftCard from "../../components/NftCard";
-let provider: any;
-let exchangeContract: any;
-let nftContract: any;
+import { MyContext } from "../../MyContext";
 
 export default function Loan() {
+  const {
+    acc,
+    exchangeContractDecentralised,
+    nftContractDecentralised,
+    chainId,
+  } = useContext(MyContext);
   const theme = useTheme();
   const nftTokenId = useRef<HTMLInputElement>(null);
   const loanAmount = useRef<HTMLInputElement>(null);
   const loanPeriod = useRef<HTMLInputElement>(null);
-  const [acc, setAcc] = useState<string | null>(null);
   const [loan, setLoan] = useState<any>(null);
   const [myNfts, setMyNfts] = useState<
     | [
@@ -34,39 +31,22 @@ export default function Loan() {
   >(null);
   useEffect(() => {
     (async function () {
-      provider = new ethers.providers.Web3Provider(window.ethereum);
-      setAcc((await provider.listAccounts())[0]);
-      const { chainId } = await provider.getNetwork();
-      const chainIdString = String(chainId);
-      const signer = await provider.getSigner();
-      exchangeContract = new ethers.Contract(
-        exchangeAddressFromId.get(chainIdString)!,
-        abiExchange.abi,
-        signer
-      );
-      const nftContractAddress = await exchangeContract.exchangeNftAddr();
-      nftContract = new ethers.Contract(
-        nftContractAddress!,
-        abiNFT.abi,
-        signer
-      );
-
       if (acc) {
-        setLoan(await getLoan(acc, chainIdString));
+        setLoan(await getLoan(acc, chainId));
         setMyNfts(await getNfts(acc!));
       }
     })();
   }, [acc]);
 
   const accessHandler = async function () {
-    const tx = await nftContract.setApprovalForAll(
-      exchangeContract.address,
+    const tx = await nftContractDecentralised.setApprovalForAll(
+      exchangeContractDecentralised.address,
       true
     );
     console.log(await tx.wait());
   };
   const getLoanHandler = async function () {
-    const tx = await exchangeContract.getLoan(
+    const tx = await exchangeContractDecentralised.getLoan(
       loanAmount.current!.value,
       loanPeriod.current!.value,
       nftTokenId.current!.value
@@ -77,7 +57,9 @@ export default function Loan() {
   const returnHandler = async function () {
     const amount = String(loan.amount);
     console.log(amount);
-    const tx = await exchangeContract.returnLoan({ value: amount });
+    const tx = await exchangeContractDecentralised.returnLoan({
+      value: amount,
+    });
   };
 
   return (

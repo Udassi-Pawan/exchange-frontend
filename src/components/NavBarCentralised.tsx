@@ -11,9 +11,13 @@ import Typography from "@mui/material/Typography";
 import { Link } from "react-router-dom";
 import { useTheme } from "@mui/material/styles";
 import CurrencyExchangeIcon from "@mui/icons-material/CurrencyExchange";
-import { useEffect, useState } from "react";
+import { useContext, useEffect, useState } from "react";
 import { ethers } from "ethers";
-import { nameFromId, networkIdInHex } from "../signedContracts/signedC";
+import {
+  nameFromId,
+  networkIdInHex,
+} from "../signedContracts/scriptsDecentralised";
+import { MyContext } from "../MyContext";
 const pages = [
   ["CREATE", "/centralised/create"],
   ["STAKE", "/centralised/stake"],
@@ -25,26 +29,14 @@ const pages = [
 
 export default function NavBarCentralised() {
   const theme = useTheme();
-  const [acc, setAcc] = useState<string | null>(null);
-  const [chainId, setChainId] = useState<string | null>(null);
-  useEffect(() => {
-    (async function () {
-      const provider = new ethers.providers.Web3Provider(window.ethereum);
-      const { chainId } = await provider.getNetwork();
-      const chainIdString = String(chainId);
-      setChainId(chainIdString);
-      setAcc((await provider.listAccounts())[0]);
-    })();
-  }, [chainId, acc]);
+  const { acc, setContracts, chainId, changeNetwork } = useContext(MyContext);
+
   const networkChangeHandler = async function (e: SelectChangeEvent) {
     await window.ethereum.request({
       method: "wallet_switchEthereumChain",
       params: [{ chainId: networkIdInHex.get(e.target.value) }], // chainId must be in hexadecimal numbers
     });
-    const provider = new ethers.providers.Web3Provider(window.ethereum);
-    const { chainId } = await provider.getNetwork();
-    const chainIdString = String(chainId);
-    setChainId(chainIdString);
+    await setContracts();
   };
   return (
     <Box
@@ -119,7 +111,7 @@ export default function NavBarCentralised() {
             <Select
               sx={{ color: "black" }}
               renderValue={(p) => {
-                if (p == chainId) return p;
+                if (p == chainId) return nameFromId.get(p);
               }}
               labelId="demo-simple-select-standard-label"
               id="demo-simple-select-standard"

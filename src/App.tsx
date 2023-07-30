@@ -24,35 +24,98 @@ import { useEffect, useState } from "react";
 import { Backdrop, CircularProgress } from "@mui/material";
 import MyDialogue from "./components/MyDialogue";
 import { ethers } from "ethers";
-import { exchangeAddressFromId } from "./signedContracts/scriptsCentralised";
+import { exchangeAddressFromIdCentralised } from "./signedContracts/scriptsCentralised";
 import abiExchangeCentralised from "./contracts/centralised/exchange.json";
+import abiExchangeDecentralised from "./contracts/centralised/exchange.json";
+import abiNFTCentralised from "./contracts/centralised/ExchangeNFT.json";
+import abiNFTDecentralised from "./contracts/decentralised/ExchangeNFT.json";
+import { exchangeAddressFromIdDecentralised } from "./signedContracts/scriptsDecentralised";
 
 function App() {
   const [acc, setAcc] = useState<string | null>(null);
   const [chainId, setChainId] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean | null>(null);
   const [dialogue, setDialogue] = useState<boolean | null>(null);
-  const [dialogueText, setDialogueText] = useState<string | null>("awf");
+  const [dialogueText, setDialogueText] = useState<string | null>("");
 
-  async function setCentralised() {
+  const [exchangeContractCentralised, setExchangeContractCentralised] =
+    useState<any>(null);
+
+  const [exchangeContractDecentralised, setExchangeContractDecentralised] =
+    useState<any>(null);
+  const [nftContractCentralised, setNftContractCentralised] =
+    useState<any>(null);
+  const [nftContractDecentralised, setNftContractDecentralised] =
+    useState<any>(null);
+
+  window.ethereum.on("accountsChanged", async function () {
+    const provider = new ethers.providers.Web3Provider(window.ethereum);
+    setAcc((await provider.listAccounts())[0]);
+  });
+
+  async function setContracts() {
     const provider = new ethers.providers.Web3Provider(window.ethereum);
     const signer = await provider.getSigner();
     setAcc((await provider.listAccounts())[0]);
     const { chainId } = await provider.getNetwork();
     const chainIdString = String(chainId);
     setChainId(chainIdString);
-    let contractAddress = exchangeAddressFromId.get(chainIdString);
-    const exchangeContract = new ethers.Contract(
-      contractAddress!,
-      abiExchange.abi,
+    let contractAddressCentralised =
+      exchangeAddressFromIdCentralised.get(chainIdString);
+    const exchangeConCen = new ethers.Contract(
+      contractAddressCentralised!,
+      abiExchangeCentralised.abi,
       signer
     );
-    const nftContractAddress = await exchangeContract.exchangeNftAddr();
-    nftContract = new ethers.Contract(nftContractAddress!, abiNFT.abi, signer);
+    let contractAddressDecentralised =
+      exchangeAddressFromIdDecentralised.get(chainIdString);
+    const exchangeConDec = new ethers.Contract(
+      contractAddressDecentralised!,
+      abiExchangeDecentralised.abi,
+      signer
+    );
+    setExchangeContractCentralised(exchangeConCen);
+    setExchangeContractDecentralised(exchangeConDec);
+    const nftContractAddress = await exchangeConCen.exchangeNftAddr();
+    const nftContractAddressDec = await exchangeConDec.exchangeNftAddr();
+    setNftContractCentralised(
+      new ethers.Contract(nftContractAddress!, abiNFTCentralised.abi, signer)
+    );
+    setNftContractDecentralised(
+      new ethers.Contract(
+        nftContractAddressDec!,
+        abiNFTDecentralised.abi,
+        signer
+      )
+    );
+  }
+
+  async function changeNetwork(chainId: string) {
+    await window.ethereum.request({
+      method: "wallet_switchEthereumChain",
+      params: [
+        {
+          chainId: "0x" + String(Number(chainId).toString(16)),
+        },
+      ],
+    });
+    await setContracts();
+  }
+  async function changeNetworkEvent(e: any) {
+    await window.ethereum.request({
+      method: "wallet_switchEthereumChain",
+      params: [
+        {
+          chainId: "0x" + String(Number(e.target.value).toString(16)),
+        },
+      ],
+    });
+    await setContracts();
   }
   useEffect(() => {
-    setCentralised();
-  });
+    setContracts();
+  }, [chainId, acc]);
+
   return (
     <MyContext.Provider
       value={{
@@ -62,6 +125,16 @@ function App() {
         dialogue,
         dialogueText,
         setDialogueText,
+        chainId,
+        setChainId,
+        exchangeContractCentralised,
+        nftContractCentralised,
+        exchangeContractDecentralised,
+        nftContractDecentralised,
+        setLoading,
+        setContracts,
+        changeNetwork,
+        changeNetworkEvent,
       }}
     >
       <ThemeProvider theme={mytheme}>

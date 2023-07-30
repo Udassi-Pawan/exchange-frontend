@@ -13,7 +13,10 @@ import { useTheme } from "@mui/material/styles";
 import CurrencyExchangeIcon from "@mui/icons-material/CurrencyExchange";
 import { useEffect, useState } from "react";
 import { ethers } from "ethers";
-import { nameFromId, networkIdInHex } from "../signedContracts/signedC";
+import {
+  nameFromId,
+  networkIdInHex,
+} from "../signedContracts/scriptsDecentralised";
 const pages = [
   ["CREATE", "/decentralised/create"],
   ["LOAN", "/decentralised/loan"],

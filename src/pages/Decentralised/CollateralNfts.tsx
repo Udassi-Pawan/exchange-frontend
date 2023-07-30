@@ -1,19 +1,11 @@
-import { ethers } from "ethers";
-import { useEffect, useRef, useState } from "react";
-import {
-  exchangeAddressFromId,
-  getCollateralNfts,
-} from "../../signedContracts/signedC";
-import abiExchange from "../../contracts/decentralised/exchange.json";
-import { Stack, Box, Button, Grid, Input } from "@mui/material";
+import { useContext, useEffect, useState } from "react";
+import { getCollateralNfts } from "../../signedContracts/scriptsDecentralised";
+import { Stack, Box, Button, Grid } from "@mui/material";
 import NftCard from "../../components/NftCard";
-
-let provider: any;
-let exchangeContract: any;
+import { MyContext } from "../../MyContext";
 
 export default function CollateralNfts() {
-  const collateralTokenId = useRef<HTMLInputElement>(null);
-  const collateralPrice = useRef<HTMLInputElement>(null);
+  const { exchangeContractDecentralised, chainId } = useContext(MyContext);
   const [collateralNfts, setCollateralNfts] = useState<
     | [
         {
@@ -33,22 +25,13 @@ export default function CollateralNfts() {
     borrower: string,
     price: string
   ) {
-    const tx = await exchangeContract.buyCollateralNft(borrower, {
+    const tx = await exchangeContractDecentralised.buyCollateralNft(borrower, {
       value: String(price),
     });
   };
   useEffect(() => {
     (async function () {
-      provider = new ethers.providers.Web3Provider(window.ethereum);
-      const { chainId } = await provider.getNetwork();
-      const chainIdString = String(chainId);
-      setCollateralNfts(await getCollateralNfts(chainIdString));
-      const signer = await provider.getSigner();
-      exchangeContract = new ethers.Contract(
-        exchangeAddressFromId.get(chainIdString)!,
-        abiExchange.abi,
-        signer
-      );
+      setCollateralNfts(await getCollateralNfts(chainId));
     })();
   }, []);
 

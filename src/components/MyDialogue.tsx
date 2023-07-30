@@ -20,28 +20,27 @@ const Transition = React.forwardRef(function Transition(
 });
 
 export default function MyDialogue() {
-  const { dialogue, dialogueText, setDialogue } = React.useContext(MyContext);
+  const { dialogueText, setDialogueText } = React.useContext(MyContext);
   const handleClose = () => {
-    setDialogue(false);
+    setDialogueText("");
   };
 
   return (
     <Dialog
-      open={dialogue}
+      open={dialogueText != ""}
       TransitionComponent={Transition}
       keepMounted
       onClose={handleClose}
       aria-describedby="alert-dialog-slide-description"
     >
-      <DialogTitle>{"Use Google's location service?"}</DialogTitle>
+      <DialogTitle>{"Alert."}</DialogTitle>
       <DialogContent>
         <DialogContentText id="alert-dialog-slide-description">
           {dialogueText}
         </DialogContentText>
       </DialogContent>
       <DialogActions>
-        <Button onClick={handleClose}>Disagree</Button>
-        <Button onClick={handleClose}>Agree</Button>
+        <Button onClick={handleClose}>Ok</Button>
       </DialogActions>
     </Dialog>
   );
