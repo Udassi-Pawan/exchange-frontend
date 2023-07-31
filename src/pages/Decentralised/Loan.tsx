@@ -1,22 +1,31 @@
 import { Button, Grid, Input, Stack, Typography } from "@mui/material";
-import { getNfts, getLoan } from "../../signedContracts/scriptsDecentralised";
+import {
+  getNfts,
+  getLoan,
+  getBalance,
+} from "../../signedContracts/scriptsDecentralised";
 import { useContext, useEffect, useRef, useState } from "react";
 import { useTheme } from "@mui/material/styles";
 import NftCard from "../../components/NftCard";
 import { MyContext } from "../../MyContext";
-
+import { Link } from "react-router-dom";
 export default function Loan() {
   const {
     acc,
     exchangeContractDecentralised,
     nftContractDecentralised,
     chainId,
+    setLoading,
+    setDialogueText,
   } = useContext(MyContext);
   const theme = useTheme();
+  const [sepoliaBalance, setSepoliaBalance] = useState<string | null>(null);
+  const [mumbaiBalance, setMumbaiBalance] = useState<string | null>(null);
+
   const nftTokenId = useRef<HTMLInputElement>(null);
   const loanAmount = useRef<HTMLInputElement>(null);
   const loanPeriod = useRef<HTMLInputElement>(null);
-  const [loan, setLoan] = useState<any>(null);
+  const [loan, setLoan] = useState<any>("");
   const [myNfts, setMyNfts] = useState<
     | [
         {
@@ -28,44 +37,88 @@ export default function Loan() {
         }
       ]
     | null
+    | []
   >(null);
   useEffect(() => {
     (async function () {
-      if (acc) {
+      if (acc && chainId) {
         setLoan(await getLoan(acc, chainId));
-        setMyNfts(await getNfts(acc!));
+        setMyNfts(await getNfts(acc!, chainId));
       }
     })();
-  }, [acc]);
+  }, [acc, chainId]);
+  useEffect(() => {
+    (async function () {
+      setSepoliaBalance(await getBalance("11155111"));
+      setMumbaiBalance(await getBalance("80001"));
+    })();
+  }, []);
 
   const accessHandler = async function () {
-    const tx = await nftContractDecentralised.setApprovalForAll(
-      exchangeContractDecentralised.address,
-      true
-    );
-    console.log(await tx.wait());
+    setLoading(true);
+
+    try {
+      const tx = await nftContractDecentralised.setApprovalForAll(
+        exchangeContractDecentralised.address,
+        true
+      );
+      console.log(await tx.wait());
+    } catch (e) {
+      setDialogueText("Approval Transaction Failed.");
+    }
+    setLoading();
   };
   const getLoanHandler = async function () {
-    const tx = await exchangeContractDecentralised.getLoan(
-      loanAmount.current!.value,
-      loanPeriod.current!.value,
-      nftTokenId.current!.value
-    );
-    console.log(await tx.wait());
+    try {
+      if (Number(loanAmount.current!.value) > 1001)
+        return setDialogueText("Loan amount should be less than 1000wei.");
+      if (Number(loanPeriod.current!.value) > 3600)
+        return setDialogueText("Loan Period should be less than 3600s.");
+      if (Number(loanAmount.current!.value) > Number(await getBalance(chainId)))
+        return setDialogueText(
+          "Not enough funds for loan available. Please try again later."
+        );
+      setLoading(true);
+      const tx = await exchangeContractDecentralised.getLoan(
+        loanAmount.current!.value,
+        loanPeriod.current!.value,
+        nftTokenId.current!.value
+      );
+      console.log(await tx.wait());
+    } catch (e) {
+      setDialogueText("Loan Credit Transaction Failed.");
+    }
+    setLoading();
+    setLoan(await getLoan(acc, chainId));
   };
 
   const returnHandler = async function () {
-    const amount = String(loan.amount);
-    console.log(amount);
-    const tx = await exchangeContractDecentralised.returnLoan({
-      value: amount,
-    });
+    setLoading(true);
+    try {
+      const amount = String(loan.amount);
+      console.log(amount);
+      const tx = await exchangeContractDecentralised.returnLoan({
+        value: amount,
+      });
+      await tx.wait();
+    } catch (e) {
+      setDialogueText("Loan Return Transaction Failed.");
+    }
+    setLoading();
   };
 
   return (
     <Stack alignItems={"center"}>
+      <Stack spacing={2} sx={{ mt: 3 }}>
+        <Typography sx={{ textDecoration: "underline" }}>
+          Contract Sepolia Balance : {sepoliaBalance}
+        </Typography>
+        <Typography sx={{ textDecoration: "underline" }}>
+          Contract Mumbai Balance : {mumbaiBalance}
+        </Typography>
+      </Stack>
       {!loan && (
-        <Stack alignItems={"center"}>
+        <Stack alignItems={"center"} spacing={5}>
           <Stack>
             <Grid container sx={{ m: 2 }} gap={2}>
               {myNfts?.map((i) => (
@@ -78,16 +131,32 @@ export default function Loan() {
                   ></NftCard>
                 </Grid>
               ))}
+              {myNfts == null && (
+                <Typography variant={"h5"}>Loading ...</Typography>
+              )}
+              {myNfts?.length == 0 && (
+                <Typography variant={"h5"} sx={{ mt: 8 }}>
+                  <Link to="/decentralised/nft">Get</Link> an NFT to stake as
+                  collateral for Loan.
+                </Typography>
+              )}
             </Grid>
           </Stack>
-
-          <Stack direction={"row"} spacing={2}>
-            <Input inputRef={nftTokenId} placeholder="nft itemId"></Input>
-            <Input inputRef={loanAmount} placeholder="loan amount"></Input>
-            <Input inputRef={loanPeriod} placeholder="loan period"></Input>
-            <Button onClick={accessHandler}>Approve Access</Button>
-            <Button onClick={getLoanHandler}>getLoan</Button>
-          </Stack>
+          {myNfts != null && myNfts?.length != 0 && loan == "" && (
+            <Typography variant="h3">Loading Loan ...</Typography>
+          )}
+          {myNfts != null && myNfts?.length != 0 && loan == null && (
+            <Typography variant="h3">Get Loan Now.</Typography>
+          )}
+          {myNfts != null && myNfts?.length != 0 && (
+            <Stack direction={"row"} spacing={2}>
+              <Input inputRef={nftTokenId} placeholder="nft itemId"></Input>
+              <Input inputRef={loanAmount} placeholder="loan amount"></Input>
+              <Input inputRef={loanPeriod} placeholder="loan period"></Input>
+              <Button onClick={accessHandler}>Approve Access</Button>
+              <Button onClick={getLoanHandler}>getLoan</Button>
+            </Stack>
+          )}
         </Stack>
       )}
       {loan && (

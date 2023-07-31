@@ -1,11 +1,16 @@
 import { useContext, useEffect, useState } from "react";
 import { getCollateralNfts } from "../../signedContracts/scriptsDecentralised";
-import { Stack, Box, Button, Grid } from "@mui/material";
+import { Stack, Box, Button, Grid, Typography } from "@mui/material";
 import NftCard from "../../components/NftCard";
 import { MyContext } from "../../MyContext";
 
 export default function CollateralNfts() {
-  const { exchangeContractDecentralised, chainId } = useContext(MyContext);
+  const {
+    exchangeContractDecentralised,
+    chainId,
+    setLoading,
+    setDialogueText,
+  } = useContext(MyContext);
   const [collateralNfts, setCollateralNfts] = useState<
     | [
         {
@@ -18,6 +23,7 @@ export default function CollateralNfts() {
         }
       ]
     | null
+    | []
   >(null);
 
   const getCollateralHandler = async function (
@@ -25,20 +31,46 @@ export default function CollateralNfts() {
     borrower: string,
     price: string
   ) {
-    const tx = await exchangeContractDecentralised.buyCollateralNft(borrower, {
-      value: String(price),
-    });
+    setLoading(true);
+    try {
+      const tx = await exchangeContractDecentralised.buyCollateralNft(
+        borrower,
+        {
+          value: String(price),
+        }
+      );
+      await tx.wait();
+    } catch (e) {
+      setDialogueText("NFT Purchase Failed.");
+    }
+    setLoading();
+    setCollateralNfts(null);
+    setCollateralNfts(await getCollateralNfts(chainId));
   };
   useEffect(() => {
     (async function () {
-      setCollateralNfts(await getCollateralNfts(chainId));
+      if (chainId) setCollateralNfts(await getCollateralNfts(chainId));
+      if (chainId) console.log(await getCollateralNfts(chainId));
     })();
-  }, []);
+  }, [chainId]);
 
   return (
     <Box>
       <Box>
-        <Grid container sx={{ m: 2 }} gap={2}>
+        <Stack alignItems={"center"} sx={{ mt: 8 }} spacing={2}>
+          {collateralNfts == null && (
+            <Typography variant={"h3"}>Loading NFTs ...</Typography>
+          )}
+          {collateralNfts?.length == 0 && (
+            <Stack alignItems={"center"} spacing={2}>
+              <Typography variant={"h3"}>
+                No NFts for sale currently.
+              </Typography>
+              <Typography variant={"h3"}>
+                Please come back again later.
+              </Typography>
+            </Stack>
+          )}
           {collateralNfts?.map((i) => (
             <Grid item container direction="column" key={i.image}>
               <Stack alignItems={"center"} spacing={2}>
@@ -62,7 +94,7 @@ export default function CollateralNfts() {
               </Stack>
             </Grid>
           ))}
-        </Grid>
+        </Stack>
       </Box>
     </Box>
   );

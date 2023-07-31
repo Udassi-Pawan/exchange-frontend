@@ -15,6 +15,7 @@ import {
   Select,
   Stack,
   TextField,
+  Typography,
 } from "@mui/material";
 import NftCard from "../../components/NftCard";
 import { useTheme } from "@mui/material/styles";
@@ -32,7 +33,7 @@ const sepoliaContract = getSignedContract("11155111");
 mumbaiContract.on("transactionAttested", async (nonce) => {
   setTimeout(async () => {
     console.log("minting ", nonce);
-    const tx = await mumbaiContract.mintTransferedNft(nonce);
+    const tx = await mumbaiContract.completeAttestedTx(nonce);
     console.log(await tx.wait());
   }, 3000);
 });
@@ -40,7 +41,7 @@ mumbaiContract.on("transactionAttested", async (nonce) => {
 sepoliaContract.on("transactionAttested", async (nonce) => {
   setTimeout(async () => {
     console.log("minting ", nonce);
-    const tx = await sepoliaContract.mintTransferedNft(nonce);
+    const tx = await sepoliaContract.completeAttestedTx(nonce);
     console.log(await tx.wait());
   }, 3000);
 });
@@ -52,6 +53,8 @@ export default function Create() {
     chainId,
     exchangeContractDecentralised,
     nftContractDecentralised,
+    setLoading,
+    setDialogueText,
   } = useContext(MyContext);
   const [myNfts, setMyNfts] = useState<
     | [
@@ -64,59 +67,96 @@ export default function Create() {
         }
       ]
     | null
+    | []
   >(null);
   useEffect(() => {
     (async function () {
-      setMyNfts(await getNfts(acc));
+      setMyNfts(null);
+      if (chainId) setMyNfts(await getNfts(acc, chainId));
     })();
-  }, [acc]);
+  }, [acc, chainId]);
 
   const image = useRef<HTMLInputElement>(null);
   const destNetwork = useRef<HTMLSelectElement>(null);
   const name = useRef<HTMLInputElement>(null);
   const desc = useRef<HTMLInputElement>(null);
   const itemId = useRef<HTMLInputElement>(null);
-  const clickHandler = async function () {
-    const client = await ipfsClient({
-      host: "ipfs.infura.io",
-      port: 5001,
-      protocol: "https",
-      apiPath: "/api/v0",
-      headers: {
-        authorization: auth,
-      },
-    });
-    const result1 = await client.add(image?.current?.files![0]!);
-    const imageIpfsAddress = `https://ipfs.io/ipfs/${result1.path}`;
-    console.log(imageIpfsAddress);
-    const nameString = name.current?.value;
-    const descString = desc.current?.value;
-    const result2 = await client.add(
-      JSON.stringify({
-        image: imageIpfsAddress,
-        name: nameString,
-        description: descString,
-      })
-    );
-    const nftIpfsAddress = `https://ipfs.io/ipfs/${result2.path}`;
-    console.log(nftIpfsAddress);
-    const mintTx = await nftContractDecentralised.safeMint(acc, nftIpfsAddress);
+  const mintHandler = async function () {
+    setLoading(true);
+    try {
+      const client = await ipfsClient({
+        host: "ipfs.infura.io",
+        port: 5001,
+        protocol: "https",
+        apiPath: "/api/v0",
+        headers: {
+          authorization: auth,
+        },
+      });
+      const result1 = await client.add(image?.current?.files![0]!);
+      const imageIpfsAddress = `https://ipfs.io/ipfs/${result1.path}`;
+      console.log(imageIpfsAddress);
+      const nameString = name.current?.value;
+      const descString = desc.current?.value;
+      const result2 = await client.add(
+        JSON.stringify({
+          image: imageIpfsAddress,
+          name: nameString,
+          description: descString,
+        })
+      );
+      const nftIpfsAddress = `https://ipfs.io/ipfs/${result2.path}`;
+      console.log(nftIpfsAddress);
+      const mintTx = await nftContractDecentralised.safeMint(
+        acc,
+        nftIpfsAddress
+      );
 
-    await mintTx.wait();
+      await mintTx.wait();
 
-    setMyNfts(await getNfts(acc!));
+      setMyNfts(await getNfts(acc!, chainId));
+    } catch (e) {
+      setDialogueText("NFT Minting Failed");
+    }
+    setMyNfts(null);
+    setMyNfts(await getNfts(acc, chainId));
+    setLoading();
   };
 
   const accessHandler = async function () {
-    const tx = await nftContractDecentralised.setApprovalForAll(
-      exchangeContractDecentralised.address,
-      true
-    );
-    console.log(await tx.wait());
+    setLoading(true);
+    try {
+      const tx = await nftContractDecentralised.setApprovalForAll(
+        exchangeContractDecentralised.address,
+        true
+      );
+      await tx.wait();
+      console.log(await tx.wait());
+    } catch (e) {
+      setDialogueText("Approval Transaction Failed");
+    }
+    setLoading();
   };
   const sendHandler = async function () {
-    const tokenId = itemId.current!.value;
-    const sendTx = await exchangeContractDecentralised.transferToDead(tokenId);
+    setLoading(true);
+    try {
+      const checkApproval = await nftContractDecentralised.isApprovedForAll(
+        acc,
+        exchangeContractDecentralised.address
+      );
+      if (checkApproval == false) {
+        setDialogueText("Please approve access to NFT first.");
+        return setLoading();
+      }
+      const tokenId = itemId.current!.value;
+      const sendTx = await exchangeContractDecentralised.transferToDead(
+        tokenId
+      );
+      await sendTx.wait();
+    } catch (e) {
+      setDialogueText("Transfer Transaction Failed.");
+    }
+    setLoading();
   };
   return (
     <Stack
@@ -126,7 +166,7 @@ export default function Create() {
       m={2}
     >
       <Box>
-        <Grid container sx={{ m: 2 }} direction={"row"} gap={2}>
+        <Grid container sx={{ m: 2 }} direction={"row"} gap={6}>
           {myNfts?.map((i) => (
             <Grid item key={i.image}>
               <NftCard
@@ -139,6 +179,12 @@ export default function Create() {
           ))}
         </Grid>
       </Box>
+      {myNfts == null && (
+        <Typography variant={"h3"}>Loading NFTs ...</Typography>
+      )}
+      {myNfts?.length == 0 && (
+        <Typography variant={"h3"}>Mint your first NFT now. </Typography>
+      )}
       <Stack direction={"row"} alignItems={"center"} spacing={2}>
         <Input
           inputRef={image}
@@ -153,11 +199,19 @@ export default function Create() {
           inputRef={desc}
           placeholder="description"
         ></TextField>
-        <Button onClick={clickHandler}>Mint</Button>
+        <Button
+          variant={"contained"}
+          sx={{
+            backgroundColor: theme.palette.secondary.dark,
+          }}
+          onClick={mintHandler}
+        >
+          Mint
+        </Button>
       </Stack>
 
       <Stack direction={"row"} alignItems={"center"} spacing={2}>
-        <Input ref={itemId} placeholder="itemId"></Input>
+        <Input inputRef={itemId} placeholder="itemId"></Input>
         <FormControl variant="standard" sx={{ m: 1, minWidth: 120 }}>
           <InputLabel>Send To</InputLabel>
           <Select inputRef={destNetwork} id="demo-simple-select">
@@ -168,8 +222,24 @@ export default function Create() {
           </Select>
         </FormControl>
 
-        <Button onClick={accessHandler}>Approve Access</Button>
-        <Button onClick={sendHandler}>Transfer</Button>
+        <Button
+          variant={"contained"}
+          sx={{
+            backgroundColor: theme.palette.secondary.dark,
+          }}
+          onClick={accessHandler}
+        >
+          Approve Access
+        </Button>
+        <Button
+          variant={"contained"}
+          sx={{
+            backgroundColor: theme.palette.secondary.dark,
+          }}
+          onClick={sendHandler}
+        >
+          Transfer
+        </Button>
       </Stack>
     </Stack>
   );

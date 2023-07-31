@@ -13,9 +13,15 @@ let provider: any;
 
 export default function Stake() {
   const theme = useTheme();
-  const { exchangeContractDecentralised, acc, chainId } = useContext(MyContext);
+  const {
+    exchangeContractDecentralised,
+    acc,
+    chainId,
+    setLoading,
+    setDialogueText,
+  } = useContext(MyContext);
   const [stakes, setStakes] = useState<
-    [{ value: string; time: string }] | null
+    [{ value: string; time: string }] | null | []
   >(null);
   const [unlocked, setUnlocked] = useState<any>(null);
   const stakeValue = useRef<HTMLInputElement>(null);
@@ -30,6 +36,7 @@ export default function Stake() {
       provider = new ethers.providers.Web3Provider(window.ethereum);
       await provider.send("eth_requestAccounts", []);
       const signer = await provider.getSigner();
+      if (!exchangeContractDecentralised) return;
       const tokenAddress = await exchangeContractDecentralised.stakeTokenAddr();
       tokenContract = new ethers.Contract(tokenAddress!, abiToken.abi, signer);
       if (!acc || !chainId) return;
@@ -39,31 +46,51 @@ export default function Stake() {
       setSepoliaBalance(await getBalance("11155111"));
       setMumbaiBalance(await getBalance("80001"));
     })();
-  }, [acc]);
+  }, [acc, exchangeContractDecentralised]);
 
   const stakeHandler = async () => {
-    const tx = await exchangeContractDecentralised.stakeEth(
-      periodValue.current!.value,
-      {
-        value: stakeValue.current!.value,
-      }
-    );
-    const receipt = await tx.wait();
-    console.log(receipt);
-    const [stakesArray, unlockedValue] = await getStakes(acc!, chainId!);
-    setStakes(stakesArray!);
-    setUnlocked(unlockedValue);
+    if (Number(periodValue.current!.value) < 31)
+      return setDialogueText("Deposit Period should be longer than 31s.");
+    setLoading(true);
+    try {
+      const tx = await exchangeContractDecentralised.stakeEth(
+        periodValue.current!.value,
+        {
+          value: stakeValue.current!.value,
+        }
+      );
+      const receipt = await tx.wait();
+      console.log(receipt);
+      const [stakesArray, unlockedValue] = await getStakes(acc!, chainId!);
+      setStakes(stakesArray!);
+      setUnlocked(unlockedValue);
+      setSepoliaBalance(await getBalance("11155111"));
+      setMumbaiBalance(await getBalance("80001"));
+    } catch (e) {
+      setDialogueText("Deposit Transaction Failed.");
+    }
+    setLoading();
   };
   const withdrawHandler = async () => {
-    const redeemAmount = Number(redeemValue.current!.value);
-    const transferTx = await exchangeContractDecentralised.withdrawStakedEth(
-      redeemAmount
-    );
-    const recTransferTx = await transferTx.wait();
-    console.log(recTransferTx);
-    const [stakesArray, unlockedValue] = await getStakes(acc!, chainId!);
-    setStakes(stakesArray!);
-    setUnlocked(unlockedValue);
+    if (Number(redeemValue.current!.value) > Number(unlocked))
+      return setDialogueText("Not enough unlocked funds.");
+    setLoading(true);
+    try {
+      const redeemAmount = Number(redeemValue.current!.value);
+      const transferTx = await exchangeContractDecentralised.withdrawStakedEth(
+        redeemAmount
+      );
+      const recTransferTx = await transferTx.wait();
+      console.log(recTransferTx);
+      const [stakesArray, unlockedValue] = await getStakes(acc!, chainId!);
+      setStakes(stakesArray!);
+      setUnlocked(unlockedValue);
+      setSepoliaBalance(await getBalance("11155111"));
+      setMumbaiBalance(await getBalance("80001"));
+    } catch (e) {
+      setDialogueText("Withdraw transaction failed.");
+    }
+    setLoading();
   };
 
   return (
@@ -106,6 +133,12 @@ export default function Stake() {
                   </Stack>
                 </Stack>
               ))}
+            {stakes == null && (
+              <Typography fontSize={"1rem"}>Loading Deposits ...</Typography>
+            )}
+            {stakes?.length == 0 && (
+              <Typography fontSize={"1rem"}>No deposits found.</Typography>
+            )}
           </Stack>
         </Box>
       </Stack>
@@ -121,6 +154,12 @@ export default function Stake() {
           </Box>
         )}
       </Box>
+      <Stack alignItems={"center"}>
+        <Typography variant={"h5"}>Interest Rates as per period :</Typography>
+        <Typography> &gt; 1 min : 3%</Typography>
+        <Typography> &gt; 2 min : 4%</Typography>
+        <Typography> &gt; 3 min : 5%</Typography>
+      </Stack>
       <Box>
         <Input placeholder="value" inputRef={stakeValue} />
         <Input
@@ -128,12 +167,29 @@ export default function Stake() {
           placeholder="period in seconds"
           inputRef={periodValue}
         />
-        <Button onClick={stakeHandler}>Stake</Button>
+        <Button
+          variant={"contained"}
+          sx={{
+            backgroundColor: theme.palette.secondary.dark,
+          }}
+          onClick={stakeHandler}
+        >
+          Deposit
+        </Button>
       </Box>
-      <Box>
+
+      <Stack direction={"row"} spacing={2}>
         <Input placeholder="value" inputRef={redeemValue} />
-        <Button onClick={withdrawHandler}>Withdraw</Button>
-      </Box>
+        <Button
+          variant={"contained"}
+          sx={{
+            backgroundColor: theme.palette.secondary.dark,
+          }}
+          onClick={withdrawHandler}
+        >
+          Withdraw
+        </Button>
+      </Stack>
     </Stack>
   );
 }
