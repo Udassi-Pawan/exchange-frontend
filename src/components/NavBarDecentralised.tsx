@@ -8,17 +8,18 @@ import {
   Stack,
 } from "@mui/material";
 import Typography from "@mui/material/Typography";
-import { Link } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import { useTheme } from "@mui/material/styles";
 import CurrencyExchangeIcon from "@mui/icons-material/CurrencyExchange";
-import { useEffect, useState } from "react";
+import { useContext, useEffect } from "react";
 import { ethers } from "ethers";
 import {
   nameFromId,
   networkIdInHex,
 } from "../signedContracts/scriptsDecentralised";
+import { MyContext } from "../MyContext";
 const pages = [
-  ["CREATE", "/decentralised/create"],
+  ["NFT", "/decentralised/nft"],
   ["LOAN", "/decentralised/loan"],
   ["STAKE", "/decentralised/stake"],
   ["EXCHANGE", "/decentralised/exchange"],
@@ -27,9 +28,9 @@ const pages = [
 ];
 
 export default function NavBarDecentralised() {
+  const { setDialogueText, chainId, setChainId, setAcc, acc } =
+    useContext(MyContext);
   const theme = useTheme();
-  const [acc, setAcc] = useState<string | null>(null);
-  const [chainId, setChainId] = useState<string | null>(null);
   useEffect(() => {
     (async function () {
       const provider = new ethers.providers.Web3Provider(window.ethereum);
@@ -40,14 +41,19 @@ export default function NavBarDecentralised() {
     })();
   }, [chainId, acc]);
   const networkChangeHandler = async function (e: SelectChangeEvent) {
-    await window.ethereum.request({
-      method: "wallet_switchEthereumChain",
-      params: [{ chainId: networkIdInHex.get(e.target.value) }], // chainId must be in hexadecimal numbers
-    });
-    const provider = new ethers.providers.Web3Provider(window.ethereum);
-    const { chainId } = await provider.getNetwork();
-    const chainIdString = String(chainId);
-    setChainId(chainIdString);
+    try {
+      await window.ethereum.request({
+        method: "wallet_switchEthereumChain",
+        params: [{ chainId: networkIdInHex.get(e.target.value) }], // chainId must be in hexadecimal numbers
+      });
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      const { chainId } = await provider.getNetwork();
+      const chainIdString = String(chainId);
+      setChainId(chainIdString);
+    } catch (e) {
+      setDialogueText("Network Change Failed!");
+      window.location.reload();
+    }
   };
   return (
     <Box
@@ -89,7 +95,13 @@ export default function NavBarDecentralised() {
           </Stack>
           <Stack spacing={5} direction="row">
             {pages.map((page) => (
-              <Link
+              <NavLink
+                activeStyle={{
+                  color: "blue",
+                  border: "1px solid blue",
+                  padding: "0 2px",
+                  boxSizing: "border-box",
+                }}
                 key={page[0]}
                 style={{
                   color: theme.palette.primary.main,
@@ -102,7 +114,7 @@ export default function NavBarDecentralised() {
                 <Typography variant="body2" fontFamily={"Roboto"}>
                   {page[0]}
                 </Typography>
-              </Link>
+              </NavLink>
             ))}
           </Stack>
         </Stack>
@@ -122,7 +134,7 @@ export default function NavBarDecentralised() {
             <Select
               sx={{ color: "black" }}
               renderValue={(p) => {
-                if (p == chainId) return p;
+                if (p == chainId) return nameFromId.get(p);
               }}
               labelId="demo-simple-select-standard-label"
               id="demo-simple-select-standard"

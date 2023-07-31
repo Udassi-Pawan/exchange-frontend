@@ -26,7 +26,7 @@ import MyDialogue from "./components/MyDialogue";
 import { ethers } from "ethers";
 import { exchangeAddressFromIdCentralised } from "./signedContracts/scriptsCentralised";
 import abiExchangeCentralised from "./contracts/centralised/exchange.json";
-import abiExchangeDecentralised from "./contracts/centralised/exchange.json";
+import abiExchangeDecentralised from "./contracts/decentralised/exchange.json";
 import abiNFTCentralised from "./contracts/centralised/ExchangeNFT.json";
 import abiNFTDecentralised from "./contracts/decentralised/ExchangeNFT.json";
 import { exchangeAddressFromIdDecentralised } from "./signedContracts/scriptsDecentralised";
@@ -91,27 +91,38 @@ function App() {
   }
 
   async function changeNetwork(chainId: string) {
-    await window.ethereum.request({
-      method: "wallet_switchEthereumChain",
-      params: [
-        {
-          chainId: "0x" + String(Number(chainId).toString(16)),
-        },
-      ],
-    });
-    await setContracts();
+    try {
+      await window.ethereum.request({
+        method: "wallet_switchEthereumChain",
+        params: [
+          {
+            chainId: "0x" + String(Number(chainId).toString(16)),
+          },
+        ],
+      });
+      await setContracts();
+    } catch (e) {
+      setDialogueText("Transaction Failed!");
+      window.location.reload();
+    }
   }
   async function changeNetworkEvent(e: any) {
-    await window.ethereum.request({
-      method: "wallet_switchEthereumChain",
-      params: [
-        {
-          chainId: "0x" + String(Number(e.target.value).toString(16)),
-        },
-      ],
-    });
-    await setContracts();
+    try {
+      await window.ethereum.request({
+        method: "wallet_switchEthereumChain",
+        params: [
+          {
+            chainId: "0x" + String(Number(e.target.value).toString(16)),
+          },
+        ],
+      });
+      await setContracts();
+    } catch (e) {
+      setDialogueText("Transaction Failed!");
+      window.location.reload();
+    }
   }
+
   useEffect(() => {
     setContracts();
   }, [chainId, acc]);
@@ -153,7 +164,7 @@ function App() {
             <Route exact path="/">
               <Start />
             </Route>
-            <Route exact path="/decentralised/create">
+            <Route exact path="/decentralised/nft">
               <LayoutDecentralised>
                 <Create />
               </LayoutDecentralised>
@@ -183,7 +194,7 @@ function App() {
             </Route>
             <ThemeProvider theme={centerTheme}>
               <LayoutCentralised>
-                <Route path="/centralised/create">
+                <Route path="/centralised/nft">
                   <CreateCentralised />
                 </Route>
                 <Route path="/centralised/stake">

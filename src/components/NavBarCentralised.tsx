@@ -8,18 +8,17 @@ import {
   Stack,
 } from "@mui/material";
 import Typography from "@mui/material/Typography";
-import { Link } from "react-router-dom";
+import { NavLink } from "react-router-dom";
 import { useTheme } from "@mui/material/styles";
 import CurrencyExchangeIcon from "@mui/icons-material/CurrencyExchange";
-import { useContext, useEffect, useState } from "react";
-import { ethers } from "ethers";
+import { useContext } from "react";
 import {
   nameFromId,
   networkIdInHex,
 } from "../signedContracts/scriptsDecentralised";
 import { MyContext } from "../MyContext";
 const pages = [
-  ["CREATE", "/centralised/create"],
+  ["NFT", "/centralised/nft"],
   ["STAKE", "/centralised/stake"],
   ["EXCHANGE", "/centralised/exchange"],
   ["KYC", "/centralised/kyc"],
@@ -29,14 +28,20 @@ const pages = [
 
 export default function NavBarCentralised() {
   const theme = useTheme();
-  const { acc, setContracts, chainId, changeNetwork } = useContext(MyContext);
+  const { acc, setContracts, chainId, setDialogueText } = useContext(MyContext);
 
   const networkChangeHandler = async function (e: SelectChangeEvent) {
-    await window.ethereum.request({
-      method: "wallet_switchEthereumChain",
-      params: [{ chainId: networkIdInHex.get(e.target.value) }], // chainId must be in hexadecimal numbers
-    });
-    await setContracts();
+    try {
+      await window.ethereum.request({
+        method: "wallet_switchEthereumChain",
+        params: [{ chainId: networkIdInHex.get(e.target.value) }], // chainId must be in hexadecimal numbers
+      });
+
+      await setContracts();
+    } catch (e) {
+      setDialogueText("Network Change Failed!");
+      window.location.reload();
+    }
   };
   return (
     <Box
@@ -78,10 +83,16 @@ export default function NavBarCentralised() {
           </Stack>
           <Stack spacing={5} direction="row">
             {pages.map((page) => (
-              <Link
+              <NavLink
+                activeStyle={{
+                  color: "red",
+                  border: "1px solid red",
+                  padding: "0 2px",
+                }}
                 key={page[0]}
                 style={{
                   color: theme.palette.secondary.main,
+
                   textDecoration: "none",
                   textTransform: "none",
                   fontWeight: "bold",
@@ -91,7 +102,7 @@ export default function NavBarCentralised() {
                 <Typography variant="body2" fontFamily={"Roboto"}>
                   {page[0]}
                 </Typography>
-              </Link>
+              </NavLink>
             ))}
           </Stack>
         </Stack>

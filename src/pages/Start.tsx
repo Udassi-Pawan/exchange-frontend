@@ -9,8 +9,8 @@ export default function Start() {
 
       <CssBaseline></CssBaseline>
       <Stack justifyContent={"center"} alignItems={"center"}>
-        <Link to="/decentralised/create">dec</Link>
-        <Link to="/centralised/create">cen</Link>
+        <Link to="/decentralised/nft">dec</Link>
+        <Link to="/centralised/nft">cen</Link>
       </Stack>
     </>
   );
