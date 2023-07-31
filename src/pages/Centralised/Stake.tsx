@@ -25,12 +25,19 @@ let tokenContract: any;
 let provider: any;
 
 export default function Stake() {
+  const [counter, setCounter] = useState<number>(0);
   const theme = useTheme();
-  const { exchangeContractCentralised, acc , changeNetworkEvent} = useContext(MyContext);
+  const {
+    exchangeContractCentralised,
+    acc,
+    changeNetworkEvent,
+    setLoading,
+    setDialogueText,
+  } = useContext(MyContext);
 
   const toNetwork = useRef<HTMLInputElement>(null);
   const [stakes, setStakes] = useState<
-    [{ value: string; time: string }] | null
+    [{ value: string; time: string }] | null | []
   >(null);
   const [unlocked, setUnlocked] = useState<any>(null);
   const stakeValue = useRef<HTMLInputElement>(null);
@@ -41,6 +48,7 @@ export default function Stake() {
     (async function () {
       provider = new ethers.providers.Web3Provider(window.ethereum);
       const signer = await provider.getSigner();
+      if (!exchangeContractCentralised) return;
       const tokenAddress = await exchangeContractCentralised.stakeTokenAddr();
       tokenContract = new ethers.Contract(tokenAddress!, abiToken.abi, signer);
       if (!acc) return;
@@ -48,60 +56,83 @@ export default function Stake() {
       setStakes(stakesArray!);
       setUnlocked(unlockedValue);
     })();
-  }, [acc]);
+  }, [acc, exchangeContractCentralised]);
 
   const stakeHandler = async () => {
-    const tx = await exchangeContractCentralised.stakeEth(
-      periodValue.current!.value,
-      {
-        value: stakeValue.current!.value,
-      }
-    );
-    const receipt = await tx.wait();
-    console.log(receipt);
+    // return setCounter((prev) => prev + 1);
+    if (Number(periodValue.current!.value) <= 30)
+      return setDialogueText("Deposit period should be more than 30s.");
+    setLoading(true);
+
+    try {
+      const tx = await exchangeContractCentralised.stakeEth(
+        periodValue.current!.value,
+        {
+          value: stakeValue.current!.value,
+        }
+      );
+      const receipt = await tx.wait();
+      console.log(receipt);
+    } catch (e) {
+      setLoading(false);
+      return setDialogueText("Deposit Transaction failed.");
+    }
+    setLoading(false);
     const [stakesArray, unlockedValue] = await getStakes(acc!);
     setStakes(stakesArray!);
     setUnlocked(unlockedValue);
+    setCounter((prev) => prev + 1);
   };
   const withdrawHandler = async () => {
-    let total = 0;
-    const redeemAmount = Number(redeemValue.current!.value);
-    if (unlocked[0] + unlocked[1] + unlocked[2] < redeemAmount) return;
-    for (let i = 0; i < 3; i++) {
-      const exchangeContract = getSignedContract(networks[i]);
-      if (total + unlocked[i] >= redeemAmount) {
-        console.log("burning final");
-        const burnTx = await exchangeContract.burnStakedEth(
-          acc,
-          redeemAmount - total
-        );
-        const recBurnTx = await burnTx.wait();
-        total += redeemAmount - total;
-        break;
-      } else {
-        console.log("burning", unlocked[i], networks[i]);
-        const burnTx = await exchangeContract.burnStakedEth(acc, unlocked[i]);
-        const recBurnTx = await burnTx.wait();
-        total += unlocked[i];
+    setLoading(true);
+    try {
+      const redeemAmount = Number(redeemValue.current!.value);
+      if (unlocked[0] + unlocked[1] + unlocked[2] < redeemAmount) {
+        setDialogueText("Not enough unlocked funds!");
+        return setLoading();
       }
-    }
-    if (total == redeemAmount) {
-      console.log("transfering eth");
-      const exchangeContract = getSignedContract(toNetwork.current!.value);
+      let total = 0;
+      for (let i = 0; i < 3; i++) {
+        if (unlocked[i] == 0) continue;
+        const exchangeContract = getSignedContract(networks[i]);
+        if (total + unlocked[i] >= redeemAmount) {
+          console.log("burning final");
+          const burnTx = await exchangeContract.burnStakedEth(
+            acc,
+            redeemAmount - total
+          );
+          await burnTx.wait();
+          total += redeemAmount - total;
+          break;
+        } else {
+          console.log("burning", unlocked[i], networks[i]);
+          const burnTx = await exchangeContract.burnStakedEth(acc, unlocked[i]);
+          await burnTx.wait();
+          total += unlocked[i];
+        }
+      }
+      if (total == redeemAmount) {
+        console.log("transfering eth");
+        const exchangeContract = getSignedContract(toNetwork.current!.value);
 
-      const transferTx = await exchangeContract.withdrawEth(acc, total);
-      const recTransferTx = await transferTx.wait();
-      console.log(recTransferTx);
-    }
+        const transferTx = await exchangeContract.ithdrawEth(acc, total);
+        const recTransferTx = await transferTx.wait();
+        console.log(recTransferTx);
+      }
 
-    const [stakesArray, unlockedValue] = await getStakes(acc!);
-    setStakes(stakesArray!);
-    setUnlocked(unlockedValue);
+      const [stakesArray, unlockedValue] = await getStakes(acc!);
+      setCounter((prev) => prev + 1);
+      setStakes(stakesArray!);
+      setUnlocked(unlockedValue);
+    } catch (e) {
+      setDialogueText("Withdraw Transaction Failed.");
+    }
+    setLoading();
   };
 
   return (
-    <Stack alignItems={"center"} spacing={5}>
-      <ContractBalancesCentralised />
+    <Stack alignItems={"center"} spacing={5} mb={5}>
+      <ContractBalancesCentralised counterState={counter} />
       <Box
         sx={{
           backgroundColor: theme.palette.secondary.dark,
@@ -111,7 +142,7 @@ export default function Stake() {
         }}
       >
         <Stack mt={2} mb={2} alignItems={"center"}>
-          <Typography mb={1.6} fontSize={"1.4rem"}>
+          <Typography mb={1.6} fontSize={"1.7rem"}>
             Locked Deposits:
           </Typography>
           {stakes &&
@@ -127,17 +158,29 @@ export default function Stake() {
                 </Stack>
               </Stack>
             ))}
+          {stakes == null && (
+            <Typography fontSize={"1rem"}>Loading Deposits ...</Typography>
+          )}
+          {stakes?.length == 0 && (
+            <Typography fontSize={"1rem"}>No deposits found.</Typography>
+          )}
         </Stack>
       </Box>
       <Box>
         {unlocked && (
           <Box>
             <Typography variant={"h6"}>
-              Unlocked tokens :{unlocked[0] + unlocked[1] + unlocked[2]}
+              Unlocked tokens : {unlocked[0] + unlocked[1] + unlocked[2]}
             </Typography>
           </Box>
         )}
       </Box>
+      <Stack alignItems={"center"}>
+        <Typography variant={"h5"}>Interest Rates as per period :</Typography>
+        <Typography> &gt; 1 min : 3%</Typography>
+        <Typography> &gt; 2 min : 4%</Typography>
+        <Typography> &gt; 3 min : 5%</Typography>
+      </Stack>
       <Stack alignItems={"center"} direction={"row"} spacing={2}>
         <FormControl variant="standard" sx={{ mb: 2, minWidth: 100 }}>
           <InputLabel>Network</InputLabel>
@@ -147,9 +190,12 @@ export default function Stake() {
             <MenuItem value={"97"}>BSC</MenuItem>
           </Select>
         </FormControl>
-
         <Input placeholder="value" inputRef={stakeValue} />
-        <Input sx={{ m: 2 }} placeholder="period" inputRef={periodValue} />
+        <Input
+          sx={{ m: 2 }}
+          placeholder="period in seconds"
+          inputRef={periodValue}
+        />
         <Button
           variant={"contained"}
           sx={{
@@ -157,12 +203,12 @@ export default function Stake() {
           }}
           onClick={stakeHandler}
         >
-          Stake
+          Deposit
         </Button>
       </Stack>
-      <Box>
+      <Stack direction="row" alignItems={"center"}>
         <Input placeholder="value" inputRef={redeemValue} />
-        <FormControl sx={{ m: 1, minWidth: 80 }}>
+        <FormControl variant="standard" sx={{ m: 1, minWidth: 80 }}>
           <InputLabel>To</InputLabel>
           <Select inputRef={toNetwork}>
             <MenuItem value={"11155111"}>Sepolia</MenuItem>
@@ -179,7 +225,7 @@ export default function Stake() {
         >
           Withdraw
         </Button>
-      </Box>
+      </Stack>
     </Stack>
   );
 }

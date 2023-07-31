@@ -47,11 +47,13 @@ export default function Create() {
         }
       ]
     | null
+    | []
   >(null);
 
   useEffect(() => {
     (async function () {
       setMyNfts(await getNfts(acc!));
+      console.log(await getNfts(acc!));
     })();
   }, [acc]);
 
@@ -157,6 +159,9 @@ export default function Create() {
       </Stack>
       {myNfts == null && (
         <Typography variant={"h3"}>Loading NFTs ...</Typography>
+      )}
+      {myNfts?.length == 0 && (
+        <Typography variant={"h3"}>Mint your first NFT now. </Typography>
       )}
       <Stack direction={"row"} spacing={2}>
         <Input inputRef={image} type="file"></Input>

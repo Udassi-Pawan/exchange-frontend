@@ -1,5 +1,8 @@
 import { useTheme } from "@mui/material/styles";
-import { getSignedContract } from "../../signedContracts/scriptsCentralised";
+import {
+  getBalance,
+  getSignedContract,
+} from "../../signedContracts/scriptsCentralised";
 import {
   Select,
   MenuItem,
@@ -9,38 +12,54 @@ import {
   Input,
   Stack,
 } from "@mui/material";
-import { useContext, useRef } from "react";
+import { useContext, useRef, useState } from "react";
 import ContractBalancesCentralised from "../../components/ContractBalancesCentralised";
 import { MyContext } from "../../MyContext";
 
 export default function Exchange() {
+  const [counter, setCounter] = useState<number>(0);
   const theme = useTheme();
-  const { acc, exchangeContractCentralised, changeNetworkEvent } =
-    useContext(MyContext);
+  const {
+    acc,
+    exchangeContractCentralised,
+    changeNetworkEvent,
+    setLoading,
+    setDialogueText,
+  } = useContext(MyContext);
   const transferValue = useRef<HTMLInputElement>(null);
   const toNetwork = useRef<HTMLInputElement>(null);
 
   const transferHandler = async function () {
-    const destNetworkId = toNetwork.current?.value;
-    const value = transferValue.current?.value;
-    let transferTx;
+    setLoading(true);
     try {
+      const destNetworkId = toNetwork.current?.value;
+      const value = transferValue.current?.value;
+      const destBalance = await getBalance(destNetworkId!);
+      if (Number(value) > Number(destBalance)) {
+        setLoading();
+        return setDialogueText(
+          "Not enough funds available for the destination network."
+        );
+      }
+      let transferTx;
       transferTx = await exchangeContractCentralised.acceptEth({
         value,
       });
+      const transferReceipt = await transferTx.wait();
+      console.log("transfer", transferReceipt);
+      const signedDestContract = getSignedContract(destNetworkId!);
+      const withdrawTx = await signedDestContract.withdrawEth(acc, value);
+      const withdrawTxReceipt = await withdrawTx.wait();
+      console.log("withdraw", withdrawTxReceipt);
+      setCounter((prev) => prev + 1);
     } catch (e) {
-      return alert("cancelled");
+      setDialogueText("Transfer Transaction Failed.");
     }
-    const transferReceipt = await transferTx.wait();
-    console.log("transfer", transferReceipt);
-    const signedDestContract = getSignedContract(destNetworkId!);
-    const withdrawTx = await signedDestContract.withdrawEth(acc, value);
-    const withdrawTxReceipt = await withdrawTx.wait();
-    console.log("withdraw", withdrawTxReceipt);
+    setLoading();
   };
   return (
     <Stack alignItems="center" spacing={10} sx={{ mt: 5 }}>
-      <ContractBalancesCentralised />
+      <ContractBalancesCentralised counterState={counter} />
       <Stack
         direction={"row"}
         spacing={2}
