@@ -9,8 +9,8 @@ const networks = ["11155111", "80001"];
 // "https://matic.getblock.io/04f401f9-44f5-4841-b934-71157c95af64/testnet/",
 
 const exchangeAddressFromIdDecentralised = new Map([
-  ["11155111", "0x00e91A750B5DD0237cF0A0623BB628C1B1724101"],
-  ["80001", "0x8F07078E70fe55316cDC106ef06A03Bc1fA8797F"],
+  ["11155111", "0x705AfA604BB0592F103790cA78bB3E26e6E8baE2"],
+  ["80001", "0xB18261A222Ef31A5e9c6933a69A027C1b92839e1"],
 ]);
 
 const networkIdInHex = new Map([
@@ -68,23 +68,21 @@ async function getBalance(id: string) {
   );
 }
 
-const getNfts = async function (curAcc: string): Promise<any> {
+const getNfts = async function (curAcc: string, network: string): Promise<any> {
   let nftContract;
   const myNfts = [];
-  for (let ct = 0; ct < 2; ct++) {
-    nftContract = await getSignedNftContract(networks[ct]);
-    const count = Number(await nftContract?.totalSupply());
-    for (let i = 0; i < count; i++) {
-      try {
-        let thisOwner = await nftContract.ownerOf(i);
-        if (thisOwner == curAcc) {
-          const nftUriLoc = await nftContract.tokenURI(i);
-          let nftData = await fetch(nftUriLoc);
-          nftData = await nftData.json();
-          myNfts.push({ ...nftData, tokenId: i, network: networks[ct] });
-        }
-      } catch (e) {}
-    }
+  nftContract = await getSignedNftContract(network);
+  const count = Number(await nftContract?.totalSupply());
+  for (let i = 0; i < count; i++) {
+    try {
+      let thisOwner = await nftContract.ownerOf(i);
+      if (thisOwner == curAcc) {
+        const nftUriLoc = await nftContract.tokenURI(i);
+        let nftData = await fetch(nftUriLoc);
+        nftData = await nftData.json();
+        myNfts.push({ ...nftData, tokenId: i, network: network });
+      }
+    } catch (e) {}
   }
   return myNfts;
 };
@@ -125,19 +123,14 @@ async function getCollateralNfts(chainId: string) {
   const nfts: any = [];
   const exchangeContract = getSignedContractCentralised(chainId);
   const num = Number(await exchangeContract.usersCount());
-  console.log(num);
   for (let i = 0; i < num; i++) {
     const curUser = await exchangeContract.users(i);
     const curUserLoan = await exchangeContract.loan(curUser);
-    console.log(curUserLoan);
+    if (!curUserLoan.set) continue;
     const curTimestamp = Math.ceil(Number(Date.now()) / 1000);
     const expiry = Number(curUserLoan.cutOffTimestamp);
     const nftContract = await getSignedNftContract(chainId);
-    const curOwner = await nftContract.ownerOf(curUserLoan.nftTokenId);
-    if (
-      expiry < curTimestamp &&
-      curOwner == "0xe24fB10c138B1eB28D146dFD2Bb406FAE55176b4"
-    ) {
+    if (expiry < curTimestamp) {
       const nftUriLoc = await nftContract.tokenURI(curUserLoan.nftTokenId);
       let nftData = await fetch(nftUriLoc);
       nftData = await nftData.json();
@@ -149,7 +142,7 @@ async function getCollateralNfts(chainId: string) {
       });
     }
   }
-
+  console.log(nfts);
   return nfts;
 }
 
