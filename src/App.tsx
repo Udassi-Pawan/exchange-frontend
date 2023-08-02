@@ -30,12 +30,12 @@ import abiExchangeDecentralised from "./contracts/decentralised/exchange.json";
 import abiNFTCentralised from "./contracts/centralised/ExchangeNFT.json";
 import abiNFTDecentralised from "./contracts/decentralised/ExchangeNFT.json";
 import { exchangeAddressFromIdDecentralised } from "./signedContracts/scriptsDecentralised";
+import Validators from "./pages/Decentralised/Validators";
 
 function App() {
   const [acc, setAcc] = useState<string | null>(null);
   const [chainId, setChainId] = useState<string | null>(null);
   const [loading, setLoading] = useState<boolean | null>(null);
-  const [dialogue, setDialogue] = useState<boolean | null>(null);
   const [dialogueText, setDialogueText] = useState<string | null>("");
 
   const [exchangeContractCentralised, setExchangeContractCentralised] =
@@ -90,22 +90,6 @@ function App() {
     );
   }
 
-  async function changeNetwork(chainId: string) {
-    try {
-      await window.ethereum.request({
-        method: "wallet_switchEthereumChain",
-        params: [
-          {
-            chainId: "0x" + String(Number(chainId).toString(16)),
-          },
-        ],
-      });
-      await setContracts();
-    } catch (e) {
-      setDialogueText("Transaction Failed!");
-      window.location.reload();
-    }
-  }
   async function changeNetworkEvent(e: any) {
     try {
       await window.ethereum.request({
@@ -130,10 +114,8 @@ function App() {
   return (
     <MyContext.Provider
       value={{
-        acc,
         setAcc,
-        setDialogue,
-        dialogue,
+        acc,
         dialogueText,
         setDialogueText,
         chainId,
@@ -143,9 +125,8 @@ function App() {
         exchangeContractDecentralised,
         nftContractDecentralised,
         setLoading,
-        setContracts,
-        changeNetwork,
         changeNetworkEvent,
+        setContracts,
       }}
     >
       <ThemeProvider theme={mytheme}>
@@ -154,7 +135,7 @@ function App() {
             color: "#fff",
             zIndex: (theme) => theme.zIndex.drawer + 1,
           }}
-          open={loading! || dialogue!}
+          open={loading!}
         >
           <CircularProgress color="inherit" />
         </Backdrop>
@@ -189,6 +170,11 @@ function App() {
                 <CollateralNfts />
               </LayoutDecentralised>
             </Route>
+            <Route exact path="/decentralised/validators">
+              <LayoutDecentralised>
+                <Validators />
+              </LayoutDecentralised>
+            </Route>
             <Route exact path="/test">
               <Test />
             </Route>
@@ -206,7 +192,7 @@ function App() {
                 <Route path="/centralised/getjwt">
                   <GetJwt />
                 </Route>
-                <Route exact path="/centralised/submitkyc">
+                <Route exact path="/centralised/kyc">
                   <SubmitKyc />
                 </Route>
                 <Route exact path="/centralised/loan">

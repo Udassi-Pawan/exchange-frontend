@@ -16,8 +16,8 @@ const JRPCFromId = new Map([
   ["97", "https://bsc-testnet.publicnode.com"],
 ]);
 const exchangeAddressFromIdCentralised = new Map([
-  ["11155111", "0xfC28ED155A3E23E6992eD3551c1822232FD2E9Ba"],
-  ["80001", "0x565ef94Bd04e988C6b15dCE6C47D5716C0DD36c4"],
+  ["11155111", "0x82b9405cC9471673EAE32E9554F402A8df8C1E42"],
+  ["80001", "0x187b2BAcA68c55dA51F7F8B45384e4d370C13C65"],
   ["97", "0x99528756Da1746779B34247fce6285d91A2c2868"],
 ]);
 const networkIdInHex = new Map([

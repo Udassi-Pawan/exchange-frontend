@@ -14,6 +14,15 @@ const mytheme = createTheme({
       default: "#5CDB95",
     },
   },
+  // overrides: {
+  //   MuiCssBaseline: {
+  //     "@global": {
+  //       body: {
+  //         backgroundColor: "#1f262a",
+  //       },
+  //     },
+  //   },
+  // },
 
   typography: {
     fontFamily: ["Roboto", "Lato", "Sans Serif", "Tektur"],

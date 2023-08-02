@@ -1,0 +1,112 @@
+.card {
+  margin-right: 5rem;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 2rem;
+  width: 25rem;
+  height: 25rem;
+  display: flex;
+  flex-direction: column;
+  border-radius: 0.25rem;
+  background-color: rgba(17, 24, 39, 1);
+  padding: 1.5rem;
+}
+
+.header {
+  display: flex;
+  flex-direction: column;
+}
+
+.card .title {
+  font-size: 1.5rem;
+  line-height: 2rem;
+  font-weight: 700;
+  color: #aaa;
+}
+
+.card .price {
+  font-size: 3.75rem;
+  line-height: 1;
+  font-weight: 700;
+  color: #aaa;
+}
+
+.desc {
+  margin-top: 0.75rem;
+  margin-bottom: 0.75rem;
+  line-height: 1.625;
+  color: rgba(156, 163, 175, 1);
+}
+
+.lists {
+  margin-bottom: 1.5rem;
+  flex: 1 1 0%;
+  color: rgba(156, 163, 175, 1);
+}
+
+.lists .list {
+  margin-bottom: 0.5rem;
+  display: flex;
+  margin-left: 0.5rem;
+}
+
+.lists .list svg {
+  height: 1.5rem;
+  width: 1.5rem;
+  flex-shrink: 0;
+  margin-right: 0.5rem;
+  color: #6be9d6;
+}
+
+.action {
+  border: none;
+  outline: none;
+  display: inline-block;
+  border-radius: 0.25rem;
+  background-color: #6be9d6;
+  padding-left: 1.25rem;
+  padding-right: 1.25rem;
+  padding-top: 0.75rem;
+  padding-bottom: 0.75rem;
+  text-align: center;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  color: rgba(17, 24, 39, 1);
+}
+
+button {
+  cursor: pointer;
+}
+
+.carddec .lists .list svg {
+  color: #81eeb2;
+}
+
+.carddec .action {
+  background-color: #81eeb2;
+}
+
+button {
+  cursor: pointer;
+}
+
+.card .title,
+.card .lists .list svg,
+.card .price {
+  color: #6be9d6;
+}
+
+.card .action {
+  background-color: #6be9d6;
+}
+
+.carddec .title,
+.carddec .lists .list svg,
+.carddec .price {
+  color: #81eeb2;
+}
+
+.carddec .action {
+  background-color: #81eeb2;
+}

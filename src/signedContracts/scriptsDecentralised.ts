@@ -9,8 +9,8 @@ const networks = ["11155111", "80001"];
 // "https://matic.getblock.io/04f401f9-44f5-4841-b934-71157c95af64/testnet/",
 
 const exchangeAddressFromIdDecentralised = new Map([
-  ["11155111", "0x705AfA604BB0592F103790cA78bB3E26e6E8baE2"],
-  ["80001", "0xB18261A222Ef31A5e9c6933a69A027C1b92839e1"],
+  ["11155111", "0xe17EAa6456E5AcF44A5f7d3Ce83F997133867171"],
+  ["80001", "0xD377d64960121f962F446f005cf254FC025C110e"],
 ]);
 
 const networkIdInHex = new Map([
@@ -53,6 +53,7 @@ async function getSignedNftContract(id: string) {
     destSigner
   );
   const nftContractAddress = await contract.exchangeNftAddr();
+  console.log(nftContractAddress);
   const nftContract = new ethers.Contract(
     nftContractAddress!,
     abiNFT.abi,
