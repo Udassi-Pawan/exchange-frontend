@@ -101,6 +101,7 @@ export default function Create() {
       setDialogueText("NFT Minting Failed!");
     }
     setLoading(false);
+    setMyNfts(null);
     setMyNfts(await getNfts(acc!));
   };
 

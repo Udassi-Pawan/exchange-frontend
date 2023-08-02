@@ -47,11 +47,12 @@ function GetJwt() {
       txSigner: destSigner,
       alg: "ES256K",
     });
-    console.log(addr);
+    // console.log(addr);
     console.log(ethrDid);
 
     const { kp, txHash } = await ethrDid.createSigningDelegate();
-    const creditScore = Math.floor(Math.random() * 20 + 80);
+    const creditScore = Math.floor(Math.random() * 30 + 70);
+    console.log(creditScore);
     const helloJWT = await ethrDid.signJWT({
       name: name.current!.value,
       birth: new Date(birth.current!.value).getTime(),
@@ -65,7 +66,7 @@ function GetJwt() {
   return (
     <Box>
       <Input inputRef={name} placeholder="name"></Input>
-      <input type="date" ref={birth}></input>
+      <Input type="date" inputRef={birth}></Input>
       <Button onClick={clickHandler}>Generate JWT</Button>
       <Typography>{jwt}</Typography>
     </Box>
