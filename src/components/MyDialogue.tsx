@@ -7,7 +7,6 @@ import DialogContentText from "@mui/material/DialogContentText";
 import DialogTitle from "@mui/material/DialogTitle";
 import Slide from "@mui/material/Slide";
 import { TransitionProps } from "@mui/material/transitions";
-import { Box } from "@mui/material";
 import { MyContext } from "../MyContext";
 
 const Transition = React.forwardRef(function Transition(

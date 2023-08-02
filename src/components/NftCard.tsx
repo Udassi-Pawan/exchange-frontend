@@ -4,7 +4,7 @@ import "./NftCard.css";
 export default function NftCard(props: any) {
   return (
     <Box className="card-container">
-      <Box className="card">
+      <Box className="cardnft">
         <Box className="img-content">
           <img src={props.image}></img>
         </Box>
