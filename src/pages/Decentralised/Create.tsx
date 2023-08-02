@@ -20,6 +20,8 @@ import {
 import NftCard from "../../components/NftCard";
 import { useTheme } from "@mui/material/styles";
 import { MyContext } from "../../MyContext";
+// import timers from "timers-promises";
+const timers = require("timers-promises");
 
 const projectId = process.env.REACT_APP_PROJECT_KEY;
 const projectSecret = process.env.REACT_APP_PROJECT_SECRET;
@@ -31,19 +33,19 @@ const mumbaiContract = getSignedContract("80001");
 const sepoliaContract = getSignedContract("11155111");
 
 mumbaiContract.on("transactionAttested", async (nonce) => {
-  setTimeout(async () => {
-    console.log("minting ", nonce);
-    const tx = await mumbaiContract.completeAttestedTx(nonce);
-    console.log(await tx.wait());
-  }, 3000);
+  await timers.setTimeout(3000);
+  console.log("completing ", nonce);
+  const tx = await mumbaiContract.completeAttestedTx(nonce);
+  console.log(await tx.wait());
+  window.location.reload();
 });
 
 sepoliaContract.on("transactionAttested", async (nonce) => {
-  setTimeout(async () => {
-    console.log("minting ", nonce);
-    const tx = await sepoliaContract.completeAttestedTx(nonce);
-    console.log(await tx.wait());
-  }, 3000);
+  await timers.setTimeout(3000);
+  console.log("completing ", nonce);
+  const tx = await sepoliaContract.completeAttestedTx(nonce);
+  console.log(await tx.wait());
+  window.location.reload();
 });
 
 export default function Create() {
@@ -56,6 +58,7 @@ export default function Create() {
     setLoading,
     setDialogueText,
   } = useContext(MyContext);
+
   const [myNfts, setMyNfts] = useState<
     | [
         {
@@ -156,7 +159,6 @@ export default function Create() {
     } catch (e) {
       setDialogueText("Transfer Transaction Failed.");
     }
-    setLoading();
   };
   return (
     <Stack

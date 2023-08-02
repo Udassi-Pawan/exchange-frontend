@@ -11,6 +11,7 @@ import { MyContext } from "../../MyContext";
 let tokenContract: any;
 let provider: any;
 
+
 export default function Stake() {
   const theme = useTheme();
   const {

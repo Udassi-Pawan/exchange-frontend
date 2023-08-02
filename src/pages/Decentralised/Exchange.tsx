@@ -50,7 +50,6 @@ export default function Exchange() {
     } catch (e) {
       setDialogueText("Transfer Transaction Failed");
     }
-    setLoading();
   };
   return (
     <Box>
