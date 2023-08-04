@@ -1,7 +1,6 @@
 import { Resolver } from "did-resolver";
 import { getResolver } from "ethr-did-resolver";
 import { EthrDID } from "ethr-did";
-
 import { ethers } from "ethers";
 import { Buffer } from "buffer";
 import { useEffect, useRef, useState } from "react";

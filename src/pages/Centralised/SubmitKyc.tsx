@@ -94,13 +94,15 @@ export default function SubmitKyc() {
   return (
     <Stack alignItems={"center"}>
       {name == null && (
-        <Typography mt={5} variant="h3">Getting KYC Status ...</Typography>
+        <Typography mt={5} variant="h3">
+          Getting KYC Status ...
+        </Typography>
       )}
       {name == "" && (
         <Stack alignItems={"center"} spacing={8} sx={{ mt: 5 }}>
           <Stack alignItems={"center"} spacing={2}>
             <Typography variant={"h3"}> KYC Pending. </Typography>
-            <Typography variant={"h3"}>
+            <Typography textAlign={"center"} variant={"h3"}>
               Please complete KYC to use more features.
             </Typography>
             <Typography variant={"h5"}>Get Your KYC code here</Typography>
@@ -121,7 +123,7 @@ export default function SubmitKyc() {
       )}
       {name != null && name != "" && (
         <Stack mt={6} alignItems={"center"} spacing={3}>
-          <Typography mb={5} variant="h4">
+          <Typography textAlign={"center"} mb={5} variant="h4">
             KYC Complete. Enjoy the added features.
           </Typography>
           <Typography variant="h3"> Name : {name}</Typography>
@@ -131,3 +133,5 @@ export default function SubmitKyc() {
     </Stack>
   );
 }
+
+// eyJ0eXAiOiJKV1QiLCJhbGciOiJFUzI1NkstUiJ9.eyJpYXQiOjE2OTExNTYyNTksIm5hbWUiOiJ1ZGFzc2kiLCJiaXJ0aCI6MTY4ODE2OTYwMDAwMCwiY3JlZGl0U2NvcmUiOjc1LCJhZGRyZXNzIjoiMHhhN0JDYTMxNWIzN2RGNUNmZGYxRTRCZGM3YzM4OTc3MjkwNzFjNTk0IiwiaXNzIjoiZGlkOmV0aHI6MHgxMzg4MToweGUyNGZCMTBjMTM4QjFlQjI4RDE0NmRGRDJCYjQwNkZBRTU1MTc2YjQifQ.1MN2SdXJnvl_rFbc8rvaHqJJJPdslkT41bWZ2UQjOAw2ndIcilGDt7INZ4QVlVq4sILIMrsRv_3-Jn7ssD_rtgA

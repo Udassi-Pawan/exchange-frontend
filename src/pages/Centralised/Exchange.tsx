@@ -28,13 +28,17 @@ export default function Exchange() {
   } = useContext(MyContext);
   const transferValue = useRef<HTMLInputElement>(null);
   const toNetwork = useRef<HTMLInputElement>(null);
+  const fromNetwork = useRef<HTMLInputElement>(null);
 
   const transferHandler = async function () {
     setLoading(true);
     try {
+      const srcNetworkId = fromNetwork.current?.value;
       const destNetworkId = toNetwork.current?.value;
       const value = transferValue.current?.value;
       const destBalance = await getBalance(destNetworkId!);
+      if (!destNetworkId || !value || srcNetworkId == destNetworkId)
+        throw new Error();
       if (Number(value) > Number(destBalance)) {
         setLoading();
         return setDialogueText(
@@ -68,7 +72,11 @@ export default function Exchange() {
       >
         <FormControl variant="standard" sx={{ minWidth: 80 }}>
           <InputLabel>From</InputLabel>
-          <Select onChange={changeNetworkEvent} id="demo-simple-select">
+          <Select
+            inputRef={fromNetwork}
+            onChange={changeNetworkEvent}
+            id="demo-simple-select"
+          >
             <MenuItem value={"11155111"}>Sepolia</MenuItem>
             <MenuItem value={"80001"}>Mumbai</MenuItem>
             <MenuItem value={"97"}>BSC</MenuItem>

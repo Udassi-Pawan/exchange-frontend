@@ -9,7 +9,7 @@ import {
   Stack,
   Typography,
 } from "@mui/material";
-import { ethers } from "ethers";
+import { Contract, ethers } from "ethers";
 import { useContext, useEffect, useRef, useState } from "react";
 import abiToken from "../../contracts/centralised/stakeToken.json";
 import {
@@ -21,10 +21,10 @@ import { useTheme } from "@mui/material/styles";
 import ContractBalancesCentralised from "../../components/ContractBalancesCentralised";
 import { MyContext } from "../../MyContext";
 
-let tokenContract: any;
-let provider: any;
+let tokenContract: Contract;
+let provider: ethers.providers.Web3Provider;
 
-export default function Stake() {
+export default function Deposits() {
   const [counter, setCounter] = useState<number>(0);
   const theme = useTheme();
   const {
@@ -37,9 +37,9 @@ export default function Stake() {
 
   const toNetwork = useRef<HTMLInputElement>(null);
   const [stakes, setStakes] = useState<
-    [{ value: string; time: string }] | null | []
+    { value: string; time: string }[] | null | []
   >(null);
-  const [unlocked, setUnlocked] = useState<any>(null);
+  const [unlocked, setUnlocked] = useState<number[] | null>(null);
   const stakeValue = useRef<HTMLInputElement>(null);
   const periodValue = useRef<HTMLInputElement>(null);
   const redeemValue = useRef<HTMLInputElement>(null);
@@ -59,7 +59,8 @@ export default function Stake() {
   }, [acc, exchangeContractCentralised]);
 
   const stakeHandler = async () => {
-    // return setCounter((prev) => prev + 1);
+    if (!stakeValue.current!.value)
+      return setDialogueText("Please set a valid amount.");
     if (Number(periodValue.current!.value) <= 30)
       return setDialogueText("Deposit period should be more than 30s.");
     setLoading(true);
@@ -73,29 +74,30 @@ export default function Stake() {
       );
       const receipt = await tx.wait();
       console.log(receipt);
-    } catch (e) {
       setLoading(false);
+      const [stakesArray, unlockedValue] = await getStakes(acc!);
+      setStakes(stakesArray!);
+      setUnlocked(null);
+      setUnlocked(unlockedValue);
+      setCounter((prev) => prev + 1);
+    } catch (e) {
       return setDialogueText("Deposit Transaction failed.");
     }
     setLoading(false);
-    const [stakesArray, unlockedValue] = await getStakes(acc!);
-    setStakes(stakesArray!);
-    setUnlocked(unlockedValue);
-    setCounter((prev) => prev + 1);
   };
   const withdrawHandler = async () => {
     setLoading(true);
     try {
       const redeemAmount = Number(redeemValue.current!.value);
-      if (unlocked[0] + unlocked[1] + unlocked[2] < redeemAmount) {
+      if (unlocked![0] + unlocked![1]! + unlocked![2] < redeemAmount) {
         setDialogueText("Not enough unlocked funds!");
         return setLoading();
       }
       let total = 0;
       for (let i = 0; i < 3; i++) {
-        if (unlocked[i] == 0) continue;
+        if (unlocked![i] == 0) continue;
         const exchangeContract = getSignedContract(networks[i]);
-        if (total + unlocked[i] >= redeemAmount) {
+        if (total + unlocked![i] >= redeemAmount) {
           console.log("burning final");
           const burnTx = await exchangeContract.burnStakedEth(
             acc,
@@ -105,21 +107,26 @@ export default function Stake() {
           total += redeemAmount - total;
           break;
         } else {
-          console.log("burning", unlocked[i], networks[i]);
-          const burnTx = await exchangeContract.burnStakedEth(acc, unlocked[i]);
+          console.log("burning", unlocked![i], networks[i]);
+          const burnTx = await exchangeContract.burnStakedEth(
+            acc,
+            unlocked![i]
+          );
           await burnTx.wait();
-          total += unlocked[i];
+          total += unlocked![i];
         }
       }
       if (total == redeemAmount) {
         console.log("transfering eth");
         const exchangeContract = getSignedContract(toNetwork.current!.value);
 
-        const transferTx = await exchangeContract.ithdrawEth(acc, total);
+        const transferTx = await exchangeContract.withdrawEth(acc, total);
         const recTransferTx = await transferTx.wait();
         console.log(recTransferTx);
       }
-
+      setLoading();
+      setStakes(null);
+      setUnlocked(null);
       const [stakesArray, unlockedValue] = await getStakes(acc!);
       setCounter((prev) => prev + 1);
       setStakes(stakesArray!);

@@ -1,5 +1,5 @@
 import { Button, Grid, Stack, Typography } from "@mui/material";
-import { useContext, useEffect, useState } from "react";
+import { ChangeEvent, useContext, useEffect, useState } from "react";
 import {
   exchangeAddressFromIdCentralised,
   getCollateralNfts,
@@ -51,7 +51,7 @@ export default function CollateralNfts() {
   }, []);
 
   const getCollateralHandler = async function (
-    e: any,
+    e: React.MouseEvent<HTMLElement>,
     network: string,
     price: string,
     tokenId: string

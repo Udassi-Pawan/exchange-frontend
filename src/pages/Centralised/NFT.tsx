@@ -26,7 +26,7 @@ const projectSecret = process.env.REACT_APP_PROJECT_SECRET;
 const auth =
   "Basic " + Buffer.from(projectId + ":" + projectSecret).toString("base64");
 
-export default function Create() {
+export default function NFT() {
   const theme = useTheme();
   const {
     nftContractCentralised,
@@ -59,6 +59,7 @@ export default function Create() {
 
   const image = useRef<HTMLInputElement>(null);
   const destNetwork = useRef<HTMLSelectElement>(null);
+  const srcNetwork = useRef<HTMLSelectElement>(null);
   const name = useRef<HTMLInputElement>(null);
   const desc = useRef<HTMLInputElement>(null);
   const itemId = useRef<HTMLInputElement>(null);
@@ -97,17 +98,20 @@ export default function Create() {
         acc,
         await nftContractCentralised.totalSupply()
       );
+      setMyNfts(null);
+      setMyNfts(await getNfts(acc!));
     } catch (e) {
       setDialogueText("NFT Minting Failed!");
     }
     setLoading(false);
-    setMyNfts(null);
-    setMyNfts(await getNfts(acc!));
   };
 
   const sendHandler = async function () {
-    setLoading(true);
     try {
+      if (!destNetwork.current!.value) throw new Error();
+      if (destNetwork.current!.value == srcNetwork.current!.value)
+        return setDialogueText("Source and Destination networks same.");
+      setLoading(true);
       const destNetworkId = destNetwork.current!.value;
       const tokenId = itemId.current!.value;
       const owner = acc;
@@ -117,7 +121,8 @@ export default function Create() {
         "0xe24fB10c138B1eB28D146dFD2Bb406FAE55176b4",
         tokenId
       );
-      await transferTx.wait();
+      const recTx = await transferTx.wait();
+      console.log(recTx);
       const destContract = await getSignedNftContract(destNetworkId);
       const srcContractSigned = await getSignedNftContract(chainId!);
       const nftUriLoc = await nftContractCentralised.tokenURI(tokenId);
@@ -133,20 +138,20 @@ export default function Create() {
         console.log(resBurn);
         const mintTx = await destContract.safeMint(owner, nftUriLoc);
         const res = await mintTx.wait();
+        setMyNfts(null);
+        setMyNfts(await getNfts(acc!));
       } else {
-        alert("NFT Not Transfered");
+        setDialogueText("NFT Not Transfered");
       }
     } catch (e) {
       setDialogueText("NFT Transfer Failed.");
     }
     setLoading(null);
-    setMyNfts(null);
-    setMyNfts(await getNfts(acc!));
   };
 
   return (
     <Stack alignItems={"center"} spacing={5}>
-      <Stack direction={"row"} spacing={10}>
+      <Stack direction={{ md: "row", xs: "column" }} spacing={{ md: 5, xs: 6 }}>
         {myNfts?.map((i) => (
           <NftCardCentralised
             image={i.image}
@@ -162,7 +167,9 @@ export default function Create() {
         <Typography variant={"h3"}>Loading NFTs ...</Typography>
       )}
       {myNfts?.length == 0 && (
-        <Typography variant={"h3"}>Mint your first NFT now. </Typography>
+        <Typography textAlign={"center"} variant={"h3"}>
+          Mint your first NFT now.{" "}
+        </Typography>
       )}
       <Stack direction={"row"} spacing={2}>
         <Input inputRef={image} type="file"></Input>
@@ -182,7 +189,7 @@ export default function Create() {
       <Stack direction={"row"} spacing={2}>
         <FormControl variant="standard" sx={{ m: 1, minWidth: 80 }}>
           <InputLabel>From</InputLabel>
-          <Select onChange={changeNetworkEvent} inputRef={destNetwork}>
+          <Select onChange={changeNetworkEvent} inputRef={srcNetwork}>
             <MenuItem value={"11155111"}>Sepolia</MenuItem>
             <MenuItem value={"80001"}>Mumbai</MenuItem>
             <MenuItem value={"97"}>BSC</MenuItem>

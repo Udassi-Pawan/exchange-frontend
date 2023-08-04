@@ -85,6 +85,13 @@ export default function Loan() {
   const getLoanHandler = async function () {
     setLoading(true);
     try {
+      if (
+        !loanAmount.current!.value ||
+        !loanNetwork.current!.value ||
+        !loanPeriod.current!.value
+      )
+        throw new Error();
+
       if (Number(loanPeriod.current!.value) > 3600) {
         setDialogueText(`Loan period should be less than 3600s.`);
         return setLoading();
@@ -123,12 +130,12 @@ export default function Loan() {
       );
       const recGetLoanTx = await getLoanTx.wait();
       console.log(recGetLoanTx);
+      setLoan("loading");
+      setLoan(await getLoan(acc));
     } catch (e) {
       setDialogueText("Loan credit transaction failed.");
     }
     setLoading();
-    setLoan("loading");
-    setLoan(await getLoan(acc));
   };
 
   const returnHandler = async function () {
@@ -166,8 +173,10 @@ export default function Loan() {
       );
       const recNftTransTx = await nftTransTx.wait();
       console.log(recNftTransTx);
-      setLoan(await getLoan(acc!));
+      setLoading();
+      setLoan("loading");
       setMyNfts(await getNfts(acc!));
+      setLoan(await getLoan(acc!));
     } catch (e) {
       setDialogueText("Loan return transaction failed.");
     }
@@ -190,7 +199,7 @@ export default function Loan() {
             </Typography>
           )}
           {name == "" && (
-            <Typography variant="h3">
+            <Typography textAlign={"center"} variant="h3">
               Please complete KYC <Link to="/centralised/kyc">here</Link> to be
               eligible for Loan.
             </Typography>
@@ -202,7 +211,7 @@ export default function Loan() {
             </Typography>
           )}
           {myNfts != null && myNfts.length == 0 && (
-            <Typography variant={"h3"} sx={{ mt: 8 }}>
+            <Typography textAlign={"center"} variant={"h3"} sx={{ mt: 8 }}>
               <Link to="/centralised/nft">Get</Link> an NFT to stake as
               collateral for Loan.
             </Typography>
@@ -221,7 +230,7 @@ export default function Loan() {
               <Typography>
                 Please choose an NFT to stake as collateral for loan.
               </Typography>
-              <Typography>
+              <Typography textAlign={"center"}>
                 You are eligible for {20 * Number(creditScore)} wei of Loan
                 amount as per your credit score of {creditScore}
               </Typography>
@@ -239,8 +248,16 @@ export default function Loan() {
                 />
               ))}
             </Stack>
-            <Stack direction="row" alignItems={"center"} spacing={3}>
-              <Input inputRef={nftTokenId} placeholder="nft itemId"></Input>
+            <Stack
+              direction={{ md: "row", xs: "column" }}
+              alignItems={"center"}
+              spacing={3}
+            >
+              <Input
+                required
+                inputRef={nftTokenId}
+                placeholder="nft itemId"
+              ></Input>
               <FormControl variant="standard" sx={{ mb: 4, minWidth: 150 }}>
                 <InputLabel>nft Network</InputLabel>
                 <Select onChange={changeNetworkEvent} inputRef={nftNetwork}>
@@ -264,7 +281,13 @@ export default function Loan() {
                 inputRef={loanPeriod}
                 placeholder="loan period in s"
               ></Input>
-              <Button onClick={getLoanHandler}>getLoan</Button>
+              <Button
+                variant="contained"
+                sx={{ backgroundColor: theme.palette.secondary.dark }}
+                onClick={getLoanHandler}
+              >
+                getLoan
+              </Button>
             </Stack>
           </Stack>
         )}
@@ -282,7 +305,7 @@ export default function Loan() {
             <Typography>
               <b> nftTokenId : </b> {loan.nftTokenId}
             </Typography>
-            <Typography>
+            <Typography textAlign={"center"}>
               <b> cutoff time : </b>
               {String(new Date(Number(loan.cutOffTimestamp) * 1000))}
             </Typography>
@@ -299,10 +322,10 @@ export default function Loan() {
             </Button>
           </Box>
           <Stack alignItems={"center"}>
-            <Typography>
+            <Typography textAlign={"center"}>
               Please return the loan amount before cutoff time.
             </Typography>
-            <Typography>
+            <Typography textAlign={"center"}>
               After the cutoff time, the collateral nft will be put for sale on
               <Link to="/centralised/market"> Marketplace </Link>
             </Typography>
