@@ -27,7 +27,7 @@ export default function CollateralNfts() {
   >(null);
 
   const getCollateralHandler = async function (
-    e: any,
+    e: React.MouseEvent<HTMLElement>,
     borrower: string,
     price: string
   ) {

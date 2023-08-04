@@ -70,6 +70,12 @@ export default function Loan() {
   };
   const getLoanHandler = async function () {
     try {
+      if (
+        !loanAmount.current!.value ||
+        !loanPeriod.current!.value ||
+        !nftTokenId.current
+      )
+        throw new Error();
       if (Number(loanAmount.current!.value) > 1001)
         return setDialogueText("Loan amount should be less than 1000wei.");
       if (Number(loanPeriod.current!.value) > 3600)
@@ -89,6 +95,7 @@ export default function Loan() {
       setDialogueText("Loan Credit Transaction Failed.");
     }
     setLoading();
+    setLoan("");
     setLoan(await getLoan(acc, chainId));
   };
 
@@ -135,7 +142,7 @@ export default function Loan() {
                 <Typography variant={"h5"}>Loading ...</Typography>
               )}
               {myNfts?.length == 0 && (
-                <Typography variant={"h5"} sx={{ mt: 8 }}>
+                <Typography textAlign={"center"} variant={"h5"} sx={{ mt: 8 }}>
                   <Link to="/decentralised/nft">Get</Link> an NFT to stake as
                   collateral for Loan.
                 </Typography>
@@ -181,7 +188,7 @@ export default function Loan() {
             variant="contained"
             onClick={returnHandler}
           >
-            ReturnLoan
+            Return Loan
           </Button>
         </Stack>
       )}

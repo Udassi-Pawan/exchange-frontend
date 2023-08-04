@@ -1,5 +1,5 @@
 import { Box, Button, Input, Stack, Typography } from "@mui/material";
-import { ethers } from "ethers";
+import { Contract, ethers } from "ethers";
 import { useTheme } from "@mui/material/styles";
 import { useContext, useEffect, useRef, useState } from "react";
 import abiToken from "../../contracts/decentralised/stakeToken.json";
@@ -8,11 +8,10 @@ import {
   getStakes,
 } from "../../signedContracts/scriptsDecentralised";
 import { MyContext } from "../../MyContext";
-let tokenContract: any;
-let provider: any;
+let tokenContract: Contract;
+let provider: ethers.providers.Web3Provider;
 
-
-export default function Stake() {
+export default function Deposits() {
   const theme = useTheme();
   const {
     exchangeContractDecentralised,
@@ -22,9 +21,9 @@ export default function Stake() {
     setDialogueText,
   } = useContext(MyContext);
   const [stakes, setStakes] = useState<
-    [{ value: string; time: string }] | null | []
+    { value: string; time: string }[] | null | []
   >(null);
-  const [unlocked, setUnlocked] = useState<any>(null);
+  const [unlocked, setUnlocked] = useState<number | null>(null);
   const stakeValue = useRef<HTMLInputElement>(null);
   const periodValue = useRef<HTMLInputElement>(null);
   const redeemValue = useRef<HTMLInputElement>(null);
@@ -95,7 +94,7 @@ export default function Stake() {
   };
 
   return (
-    <Stack alignItems={"center"} spacing={2}>
+    <Stack alignItems={"center"} spacing={5}>
       <Stack alignItems={"center"}>
         <Box>
           {chainId == "11155111" && (
@@ -161,7 +160,7 @@ export default function Stake() {
         <Typography> &gt; 2 min : 4%</Typography>
         <Typography> &gt; 3 min : 5%</Typography>
       </Stack>
-      <Box>
+      <Stack alignItems={"center"} direction={"row"} spacing={2}>
         <Input placeholder="value" inputRef={stakeValue} />
         <Input
           sx={{ m: 2 }}
@@ -177,7 +176,7 @@ export default function Stake() {
         >
           Deposit
         </Button>
-      </Box>
+      </Stack>
 
       <Stack direction={"row"} spacing={2}>
         <Input placeholder="value" inputRef={redeemValue} />

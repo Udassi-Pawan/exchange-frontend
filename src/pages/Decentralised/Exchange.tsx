@@ -13,15 +13,44 @@ import {
 import { useContext, useEffect, useRef, useState } from "react";
 import { MyContext } from "../../MyContext";
 import { useTheme } from "@mui/material/styles";
+import getSignedContract from "../../signedContracts/scriptsDecentralised";
+const timers = require("timers-promises");
+
+let curAccount;
+
+const mumbaiContract = getSignedContract("80001");
+const sepoliaContract = getSignedContract("11155111");
+
+// mumbaiContract.on("transactionAttested", async (nonce, requestor) => {
+//   console.log(requestor);
+//   await timers.setTimeout(3000);
+//   try {
+//     console.log("completing ", nonce);
+//     const tx = await mumbaiContract.completeAttestedTx(nonce);
+//     console.log(await tx.wait());
+//   } catch (e) {}
+//   window.location.reload();
+// });
+
+// sepoliaContract.on("transactionAttested", async (nonce, requestor) => {
+//   console.log(requestor);
+//   await timers.setTimeout(3000);
+//   try {
+//     console.log("completing ", nonce);
+//     const tx = await sepoliaContract.completeAttestedTx(nonce);
+//     console.log(await tx.wait());
+//   } catch (e) {}
+//   window.location.reload();
+// });
 
 export default function Exchange() {
   const theme = useTheme();
   const {
-    acc,
     chainId,
     exchangeContractDecentralised,
     setLoading,
     setDialogueText,
+    acc,
   } = useContext(MyContext);
   const [sepoliaBalance, setSepoliaBalance] = useState<string | null>(null);
   const [mumbaiBalance, setMumbaiBalance] = useState<string | null>(null);
@@ -29,13 +58,42 @@ export default function Exchange() {
   const toNetwork = useRef<HTMLInputElement>(null);
   useEffect(() => {
     (async function () {
+      mumbaiContract.on("transactionAttested", async (nonce, requestor) => {
+        console.log(requestor, acc);
+        if (requestor != acc) return;
+        await timers.setTimeout(3000);
+        try {
+          console.log("completing ", nonce);
+          const tx = await mumbaiContract.completeAttestedTx(nonce);
+          console.log(await tx.wait());
+        } catch (e) {}
+        setSepoliaBalance(await getBalance("11155111"));
+        setMumbaiBalance(await getBalance("80001"));
+        setLoading();
+      });
+
+      sepoliaContract.on("transactionAttested", async (nonce, requestor) => {
+        console.log(requestor, acc, typeof requestor, typeof acc);
+        if (requestor != acc) return;
+
+        await timers.setTimeout(3000);
+        try {
+          console.log("completing ", nonce);
+          const tx = await sepoliaContract.completeAttestedTx(nonce);
+          console.log(await tx.wait());
+        } catch (e) {}
+        setSepoliaBalance(await getBalance("11155111"));
+        setMumbaiBalance(await getBalance("80001"));
+        setLoading();
+      });
       setSepoliaBalance(await getBalance("11155111"));
       setMumbaiBalance(await getBalance("80001"));
     })();
-  }, []);
+  }, [acc]);
 
   const transferHandler = async function () {
     try {
+      if (!transferValue.current?.value) throw new Error();
       if (
         Number(transferValue.current?.value) >
         Number(await getBalance(toNetwork.current!.value))
@@ -49,6 +107,7 @@ export default function Exchange() {
       console.log(await tx.wait());
     } catch (e) {
       setDialogueText("Transfer Transaction Failed");
+      setLoading();
     }
   };
   return (
@@ -62,7 +121,7 @@ export default function Exchange() {
             Contract Mumbai Balance : {mumbaiBalance}
           </Typography>
         </Stack>
-        <Typography variant={"h6"}>
+        <Typography textAlign={"center"} variant={"h6"}>
           10% flat charges on all transfers.
         </Typography>
         <Stack direction={"row"} alignItems={"center"} spacing={2}>

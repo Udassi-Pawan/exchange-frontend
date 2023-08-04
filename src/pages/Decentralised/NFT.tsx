@@ -8,7 +8,6 @@ import {
   Box,
   Button,
   FormControl,
-  Grid,
   Input,
   InputLabel,
   MenuItem,
@@ -32,23 +31,9 @@ const auth =
 const mumbaiContract = getSignedContract("80001");
 const sepoliaContract = getSignedContract("11155111");
 
-mumbaiContract.on("transactionAttested", async (nonce) => {
-  await timers.setTimeout(3000);
-  console.log("completing ", nonce);
-  const tx = await mumbaiContract.completeAttestedTx(nonce);
-  console.log(await tx.wait());
-  window.location.reload();
-});
+let curAccount;
 
-sepoliaContract.on("transactionAttested", async (nonce) => {
-  await timers.setTimeout(3000);
-  console.log("completing ", nonce);
-  const tx = await sepoliaContract.completeAttestedTx(nonce);
-  console.log(await tx.wait());
-  window.location.reload();
-});
-
-export default function Create() {
+export default function NFT() {
   const theme = useTheme();
   const {
     acc,
@@ -75,6 +60,34 @@ export default function Create() {
   useEffect(() => {
     (async function () {
       setMyNfts(null);
+      mumbaiContract.on("transactionAttested", async (nonce, requestor) => {
+        console.log(requestor, acc);
+        if (requestor != acc) return;
+
+        await timers.setTimeout(3000);
+        try {
+          console.log("completing ", nonce);
+          const tx = await mumbaiContract.completeAttestedTx(nonce);
+          console.log(await tx.wait());
+        } catch (e) {}
+        setLoading();
+        if (chainId) setMyNfts(await getNfts(acc, chainId));
+      });
+
+      sepoliaContract.on("transactionAttested", async (nonce, requestor) => {
+        console.log(requestor);
+        if (requestor != acc) return;
+
+        await timers.setTimeout(3000);
+        try {
+          console.log("completing ", nonce);
+          const tx = await sepoliaContract.completeAttestedTx(nonce);
+          console.log(await tx.wait());
+        } catch (e) {}
+        setLoading();
+        if (chainId) setMyNfts(await getNfts(acc, chainId));
+      });
+
       if (chainId) setMyNfts(await getNfts(acc, chainId));
     })();
   }, [acc, chainId]);
@@ -121,9 +134,9 @@ export default function Create() {
     } catch (e) {
       setDialogueText("NFT Minting Failed");
     }
+    setLoading();
     setMyNfts(null);
     setMyNfts(await getNfts(acc, chainId));
-    setLoading();
   };
 
   const accessHandler = async function () {
@@ -168,26 +181,37 @@ export default function Create() {
       m={2}
     >
       <Box>
-        <Grid container sx={{ m: 2 }} direction={"row"} gap={6}>
+        <Stack
+          direction={{ md: "row", xs: "column" }}
+          spacing={{ md: 5, xs: 6 }}
+          alignItems={"center"}
+          sx={{ m: 2 }}
+        >
           {myNfts?.map((i) => (
-            <Grid item key={i.image}>
+            <Stack key={i.image}>
               <NftCard
                 image={i.image}
                 desc={i.description}
                 name={i.name}
                 itemId={i.tokenId}
               ></NftCard>
-            </Grid>
+            </Stack>
           ))}
-        </Grid>
+        </Stack>
       </Box>
       {myNfts == null && (
         <Typography variant={"h3"}>Loading NFTs ...</Typography>
       )}
       {myNfts?.length == 0 && (
-        <Typography variant={"h3"}>Mint your first NFT now. </Typography>
+        <Typography textAlign={"center"} variant={"h3"}>
+          Mint your first NFT now.{" "}
+        </Typography>
       )}
-      <Stack direction={"row"} alignItems={"center"} spacing={2}>
+      <Stack
+        direction={{ md: "row", xs: "column" }}
+        alignItems={"center"}
+        spacing={2}
+      >
         <Input
           inputRef={image}
           type="file"
@@ -212,7 +236,11 @@ export default function Create() {
         </Button>
       </Stack>
 
-      <Stack direction={"row"} alignItems={"center"} spacing={2}>
+      <Stack
+        direction={{ md: "row", xs: "column" }}
+        alignItems={"center"}
+        spacing={2}
+      >
         <Input inputRef={itemId} placeholder="itemId"></Input>
         <FormControl variant="standard" sx={{ m: 1, minWidth: 120 }}>
           <InputLabel>Send To</InputLabel>
