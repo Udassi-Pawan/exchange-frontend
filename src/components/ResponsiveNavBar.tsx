@@ -16,7 +16,7 @@ import {
   SelectChangeEvent,
   Stack,
 } from "@mui/material";
-import { NavLink } from "react-router-dom";
+import { Link, NavLink } from "react-router-dom";
 import CurrencyExchangeIcon from "@mui/icons-material/CurrencyExchange";
 import {
   nameFromId,
@@ -24,9 +24,9 @@ import {
 } from "../signedContracts/scriptsDecentralised";
 import { MyContext } from "../MyContext";
 
-function ResponsiveAppBar(props: any) {
+function ResponsiveAppBar(props: { centralised?: boolean; pages: string[][] }) {
   const { acc } = React.useContext(MyContext);
-  const pages: any = props.pages;
+  const pages = props.pages;
   const { setContracts, chainId, setDialogueText } =
     React.useContext(MyContext);
   const networkChangeHandler = async function (e: SelectChangeEvent) {
@@ -57,31 +57,33 @@ function ResponsiveAppBar(props: any) {
     <AppBar sx={{ mb: 7, pb: 1, backgroundColor: "inherit" }} position="static">
       <Container maxWidth="xl">
         <Toolbar disableGutters>
-          <Stack
-            sx={{
-              display: { xs: "none", md: "flex" },
-            }}
-            alignItems={"center"}
-            direction="row"
-            mr={5}
-          >
-            <CurrencyExchangeIcon
+          <Link style={{ textDecoration: "none" }} to="/">
+            <Stack
               sx={{
-                color: "#111",
-                fontSize: 80,
+                display: { xs: "none", md: "flex" },
               }}
-            ></CurrencyExchangeIcon>
-            <Stack>
+              alignItems={"center"}
+              direction="row"
+              mr={5}
+            >
+              <CurrencyExchangeIcon
+                sx={{
+                  color: "#111",
+                  fontSize: "5rem",
+                }}
+              ></CurrencyExchangeIcon>
               <Stack>
-                <Typography color={"#111"} fontSize={20} variant="h1">
-                  {props.centralised ? "" : "DE"}CENTRALISED
-                </Typography>
-                <Typography color={"#111"} fontSize={25} variant="h1">
-                  EXCHANGE
-                </Typography>
+                <Stack>
+                  <Typography color={"#111"} fontSize={"1rem"} variant="h1">
+                    {props.centralised ? "" : "DE"}CENTRALISED
+                  </Typography>
+                  <Typography color={"#111"} fontSize={"1.8rem"} variant="h1">
+                    EXCHANGE
+                  </Typography>
+                </Stack>
               </Stack>
             </Stack>
-          </Stack>
+          </Link>
 
           <Box sx={{ flexGrow: 1, display: { xs: "flex", md: "none" } }}>
             <IconButton
@@ -112,7 +114,7 @@ function ResponsiveAppBar(props: any) {
                 display: { xs: "block", md: "none" },
               }}
             >
-              {pages.map((page: any) => (
+              {pages.map((page) => (
                 <MenuItem key={page[0]} onClick={handleCloseNavMenu}>
                   <NavLink
                     activeStyle={{
@@ -131,29 +133,33 @@ function ResponsiveAppBar(props: any) {
             </Menu>
           </Box>
           <Stack
-            sx={{ display: { xs: "flex", md: "none" }, flexGrow: 1 }}
+            sx={{ display: { xs: "flex", md: "none", m: 1 }, flexGrow: 1 }}
             alignItems={"center"}
             direction="row"
           >
-            <CurrencyExchangeIcon
-              sx={{
-                fontSize: 80,
-                color: "#111",
-              }}
-            ></CurrencyExchangeIcon>
-            <Stack>
+            <Link style={{ textDecoration: "none" }} to="/">
+              <CurrencyExchangeIcon
+                sx={{
+                  fontSize: "5rem",
+                  color: "#111",
+                }}
+              ></CurrencyExchangeIcon>
+            </Link>
+            <Link style={{ textDecoration: "none" }} to="/">
               <Stack>
-                <Typography color={"#111"} fontSize={20} variant="h1">
-                  CENTRALISED
-                </Typography>
-                <Typography color={"#111"} fontSize={25} variant="h1">
-                  EXCHANGE
-                </Typography>
+                <Stack>
+                  <Typography color={"#111"} fontSize={"1rem"} variant="h1">
+                    CENTRALISED
+                  </Typography>
+                  <Typography color={"#111"} fontSize={"1.8rem"} variant="h1">
+                    EXCHANGE
+                  </Typography>
+                </Stack>
               </Stack>
-            </Stack>
+            </Link>
           </Stack>
           <Box sx={{ flexGrow: 1, display: { xs: "none", md: "flex" } }}>
-            {pages.map((page: any) => (
+            {pages.map((page) => (
               <NavLink
                 style={{ textDecoration: "none" }}
                 activeStyle={{

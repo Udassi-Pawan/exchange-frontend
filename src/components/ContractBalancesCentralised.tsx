@@ -2,7 +2,9 @@ import { Stack, Typography } from "@mui/material";
 import { useEffect, useState } from "react";
 import { getBalance } from "../signedContracts/scriptsCentralised";
 
-export default function ContractBalancesCentralised(props: any) {
+export default function ContractBalancesCentralised(props: {
+  counterState?: Number;
+}) {
   const [sepoliaBalance, setSepoliaBalance] = useState<string | null>(null);
   const [mumbaiBalance, setMumbaiBalance] = useState<string | null>(null);
   const [bscBalance, setBscBalance] = useState<string | null>(null);

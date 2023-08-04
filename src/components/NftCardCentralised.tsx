@@ -3,13 +3,22 @@ import { useTheme } from "@mui/material/styles";
 
 import "./NftCardCentralised.css";
 import { nameFromId } from "../signedContracts/scriptsDecentralised";
-export default function NftCardCentralised(props: any) {
+export default function NftCardCentralised(props: {
+  price?: string;
+  network: string;
+  itemId?: Number;
+  name: string;
+  desc: string;
+  image: string;
+}) {
   return (
     <Box className="book">
       <Stack alignItems={"center"} width={"80%"}>
         <Typography className="heading">{props.name}</Typography>
         {props.itemId != null && (
-          <Typography className="itemId">itemId: {props.itemId}</Typography>
+          <Typography className="itemId">
+            itemId: {String(props.itemId)}
+          </Typography>
         )}
 
         <Typography className="itemId">

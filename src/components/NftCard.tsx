@@ -1,7 +1,13 @@
 import { Box, Typography } from "@mui/material";
 import "./NftCard.css";
 
-export default function NftCard(props: any) {
+export default function NftCard(props: {
+  image: string;
+  name: String;
+  itemId?: Number;
+  desc: String;
+  price?: String;
+}) {
   return (
     <Box className="card-container">
       <Box className="cardnft">
@@ -9,16 +15,24 @@ export default function NftCard(props: any) {
           <img src={props.image}></img>
         </Box>
         <Box className="content">
-          <Typography className="heading">{props.name}</Typography>
+          <Typography color="#333" className="heading">
+            {props.name}
+          </Typography>
           {props.itemId != null ? (
-            <Typography className="itemId">itemId: {props.itemId}</Typography>
+            <Typography color="#333" className="itemId">
+              itemId: {String(props.itemId)}
+            </Typography>
           ) : (
             ""
           )}
           {props.price != null && (
-            <Typography className="itemId">price: {props.price}</Typography>
+            <Typography color="#333" className="itemId">
+              price: {props.price}
+            </Typography>
           )}
-          <Typography className="desc">{props.desc}</Typography>
+          <Typography color="#333" className="desc">
+            {props.desc}
+          </Typography>
         </Box>
       </Box>
     </Box>
