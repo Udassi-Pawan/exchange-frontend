@@ -9,8 +9,8 @@ const networks = ["11155111", "80001"];
 // "https://matic.getblock.io/04f401f9-44f5-4841-b934-71157c95af64/testnet/",
 
 const exchangeAddressFromIdDecentralised = new Map([
-  ["11155111", "0xe17EAa6456E5AcF44A5f7d3Ce83F997133867171"],
-  ["80001", "0xD377d64960121f962F446f005cf254FC025C110e"],
+  ["11155111", "0x700771a05dA385a564Fa7Bbd4dC68A2416e3fe7F"],
+  ["80001", "0xe501d76c9CE7A84b67F75E29B39A354ef8754EDb"],
 ]);
 
 const networkIdInHex = new Map([
@@ -29,7 +29,7 @@ const JRPCFromId = new Map([
   ["11155111", sepoliaURL],
   [
     "80001",
-    "https://polygon-testnet.blastapi.io/2e3e0777-ba8f-4cf1-8f77-2aac489b3274",
+    "https://polygon-mumbai.infura.io/v3/32034655eeeb4d83bc75fef39116d04f",
   ],
 ]);
 
@@ -163,8 +163,11 @@ async function getAccountBalances(acc: string) {
   return balances;
 }
 
-const getStakes = async function (acc: string, network: string): Promise<any> {
-  const stakesArray: any = [];
+const getStakes = async function (
+  acc: string,
+  network: string
+): Promise<[{ time: string; value: string }[], number]> {
+  const stakesArray = [];
   let unlocked = 0;
   // console.log(typeof network);
   network = String(network);

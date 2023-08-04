@@ -1,23 +1,42 @@
-import { Box, CssBaseline, Stack } from "@mui/material";
+import { Box, Button, CssBaseline, Stack } from "@mui/material";
 import { Link } from "react-router-dom";
 import "./Start.css";
+import { ethers } from "ethers";
+import { useContext } from "react";
+import { MyContext } from "../MyContext";
 
 export default function Start() {
+  const { setDialogueText } = useContext(MyContext);
+  const metamaskHandler = async function () {
+    console.log(window.ethereum);
+    const provider = new ethers.providers.Web3Provider(window.ethereum);
+    if ((await provider!.listAccounts())[0])
+      return setDialogueText("Metamask already connected.");
+    try {
+      await window.ethereum.request({ method: "eth_requestAccounts" });
+      await provider.send("eth_requestAccounts", []);
+    } catch (e) {
+      setDialogueText("Please unlock Metamask from extension menu.");
+    }
+  };
   return (
     <Box
       sx={{
-        // backgroundImage:
-        //   "url('https://cdn.pixabay.com/photo/2015/01/31/05/05/background-618226_1280.png')",
         backgroundImage:
           "url('https://cdn.pixabay.com/photo/2017/01/18/18/03/filter-1990470_1280.jpg')",
-        backgroundSize: 1800,
-        backgroundRepeat: "no-repeat",
+        backgroundSize: 6000,
         pt: 20,
         height: "100vh",
       }}
     >
       <Stack alignItems={"center"}>
-        {/* <CssBaseline></CssBaseline> */}
+        <Button
+          variant={"contained"}
+          sx={{ backgroundColor: "#bbb", mb: 2, mr: 1, color: "green" }}
+          onClick={metamaskHandler}
+        >
+          Connect Metamask
+        </Button>
         <Stack alignItems={"center"} direction={"row"}>
           <div className="card">
             <div className="header">

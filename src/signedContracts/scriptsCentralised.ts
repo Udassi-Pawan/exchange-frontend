@@ -16,9 +16,9 @@ const JRPCFromId = new Map([
   ["97", "https://bsc-testnet.publicnode.com"],
 ]);
 const exchangeAddressFromIdCentralised = new Map([
-  ["11155111", "0x82b9405cC9471673EAE32E9554F402A8df8C1E42"],
-  ["80001", "0x187b2BAcA68c55dA51F7F8B45384e4d370C13C65"],
-  ["97", "0x99528756Da1746779B34247fce6285d91A2c2868"],
+  ["11155111", "0x45121aE1B3AF6A27A55C841B614a8141F9CC1FFf"],
+  ["80001", "0xbD7Fc8FE7EE97d671fcfFD42E077170A61Cf977b"],
+  ["97", "0x9935CE737276f30F8AE7038c21d991054B7A077f"],
 ]);
 const networkIdInHex = new Map([
   ["11155111", "0xaa36a7"],
@@ -177,7 +177,9 @@ async function getAccountBalances(acc: string) {
   return balances;
 }
 
-const getStakes = async function (acc: string): Promise<any> {
+const getStakes = async function (
+  acc: string
+): Promise<[{ time: string; value: string; network: string }[], number[]]> {
   const stakesArray = [];
   let unlocked = [0, 0, 0];
   for (let ct = 0; ct < 3; ct++) {

@@ -1,7 +1,6 @@
 import "./App.css";
 import { BrowserRouter as Router, Switch, Route } from "react-router-dom";
-import Create from "./pages/Decentralised/Create";
-import Stake from "./pages/Decentralised/Stake";
+import Deposits from "./pages/Decentralised/Deposits";
 import Exchange from "./pages/Decentralised/Exchange";
 import Loan from "./pages/Decentralised/Loan";
 import { ThemeProvider } from "@mui/material/styles";
@@ -14,8 +13,8 @@ import CollateralNftsCentralised from "./pages/Centralised/CollateralNfts";
 import Start from "./pages/Start";
 import GetJwt from "./pages/Centralised/GetJwt";
 import SubmitKyc from "./pages/Centralised/SubmitKyc";
-import CreateCentralised from "./pages/Centralised/Create";
-import StakeCentralised from "./pages/Centralised/Stake";
+import NFTCentralised from "./pages/Centralised/NFT";
+import DepositsCentralised from "./pages/Centralised/Deposits";
 import ExchangeCentralised from "./pages/Centralised/Exchange";
 import LoanCentralised from "./pages/Centralised/Loan";
 import centerTheme from "./MuiThemeCentralised";
@@ -23,7 +22,7 @@ import { MyContext } from "./MyContext";
 import { useEffect, useState } from "react";
 import { Backdrop, CircularProgress } from "@mui/material";
 import MyDialogue from "./components/MyDialogue";
-import { ethers } from "ethers";
+import { Contract, ethers } from "ethers";
 import { exchangeAddressFromIdCentralised } from "./signedContracts/scriptsCentralised";
 import abiExchangeCentralised from "./contracts/centralised/exchange.json";
 import abiExchangeDecentralised from "./contracts/decentralised/exchange.json";
@@ -31,6 +30,7 @@ import abiNFTCentralised from "./contracts/centralised/ExchangeNFT.json";
 import abiNFTDecentralised from "./contracts/decentralised/ExchangeNFT.json";
 import { exchangeAddressFromIdDecentralised } from "./signedContracts/scriptsDecentralised";
 import Validators from "./pages/Decentralised/Validators";
+import NFT from "./pages/Decentralised/NFT";
 
 function App() {
   const [acc, setAcc] = useState<string | null>(null);
@@ -39,14 +39,14 @@ function App() {
   const [dialogueText, setDialogueText] = useState<string | null>("");
 
   const [exchangeContractCentralised, setExchangeContractCentralised] =
-    useState<any>(null);
+    useState<Contract>();
 
   const [exchangeContractDecentralised, setExchangeContractDecentralised] =
-    useState<any>(null);
+    useState<Contract>();
   const [nftContractCentralised, setNftContractCentralised] =
-    useState<any>(null);
+    useState<Contract>();
   const [nftContractDecentralised, setNftContractDecentralised] =
-    useState<any>(null);
+    useState<Contract>();
 
   window.ethereum.on("accountsChanged", async function () {
     const provider = new ethers.providers.Web3Provider(window.ethereum);
@@ -55,9 +55,9 @@ function App() {
 
   async function setContracts() {
     const provider = new ethers.providers.Web3Provider(window.ethereum);
-    const signer = await provider.getSigner();
-    setAcc((await provider.listAccounts())[0]);
-    const { chainId } = await provider.getNetwork();
+    const signer = await provider!.getSigner();
+    setAcc((await provider!.listAccounts())[0]);
+    const { chainId } = await provider!.getNetwork();
     const chainIdString = String(chainId);
     setChainId(chainIdString);
     let contractAddressCentralised =
@@ -89,8 +89,28 @@ function App() {
       )
     );
   }
+  useEffect(() => {
+    (async function () {
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      if (!(await provider?.listAccounts())[0])
+        setDialogueText("Please connect metamask to use all features.");
+    })();
+  }, []);
+  useEffect(() => {
+    let provider: ethers.providers.Web3Provider;
+    (async function () {
+      if (typeof window.ethereum == undefined) {
+        return setDialogueText("Please install Metamask.");
+      }
+      provider = new ethers.providers.Web3Provider(window.ethereum);
+      try {
+        await provider.send("eth_requestAccounts", []);
+      } catch (e) {}
+      if ((await provider?.listAccounts())[0]) setContracts();
+    })();
+  }, [acc, chainId]);
 
-  async function changeNetworkEvent(e: any) {
+  async function changeNetworkEvent(e: React.ChangeEvent<HTMLInputElement> ) {
     try {
       await window.ethereum.request({
         method: "wallet_switchEthereumChain",
@@ -103,13 +123,8 @@ function App() {
       await setContracts();
     } catch (e) {
       setDialogueText("Transaction Failed!");
-      window.location.reload();
     }
   }
-
-  useEffect(() => {
-    setContracts();
-  }, [chainId, acc]);
 
   return (
     <MyContext.Provider
@@ -147,12 +162,12 @@ function App() {
             </Route>
             <Route exact path="/decentralised/nft">
               <LayoutDecentralised>
-                <Create />
+                <NFT />
               </LayoutDecentralised>
             </Route>
-            <Route exact path="/decentralised/stake">
+            <Route exact path="/decentralised/deposits">
               <LayoutDecentralised>
-                <Stake />
+                <Deposits />
               </LayoutDecentralised>
             </Route>
             <Route exact path="/decentralised/exchange">
@@ -181,10 +196,10 @@ function App() {
             <ThemeProvider theme={centerTheme}>
               <LayoutCentralised>
                 <Route path="/centralised/nft">
-                  <CreateCentralised />
+                  <NFTCentralised />
                 </Route>
-                <Route path="/centralised/stake">
-                  <StakeCentralised />
+                <Route path="/centralised/deposits">
+                  <DepositsCentralised />
                 </Route>
                 <Route path="/centralised/exchange">
                   <ExchangeCentralised />
