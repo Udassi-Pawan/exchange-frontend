@@ -5,13 +5,11 @@ import Exchange from "./pages/Decentralised/Exchange";
 import Loan from "./pages/Decentralised/Loan";
 import { ThemeProvider } from "@mui/material/styles";
 import mytheme from "./MuiTheme";
-import Test from "./pages/Decentralised/Test";
 import LayoutDecentralised from "./components/LayoutDecentralised";
 import LayoutCentralised from "./components/LayoutCentralised";
 import CollateralNfts from "./pages/Decentralised/CollateralNfts";
 import CollateralNftsCentralised from "./pages/Centralised/CollateralNfts";
 import Start from "./pages/Start";
-import GetJwt from "./pages/Centralised/GetJwt";
 import SubmitKyc from "./pages/Centralised/SubmitKyc";
 import NFTCentralised from "./pages/Centralised/NFT";
 import DepositsCentralised from "./pages/Centralised/Deposits";
@@ -193,9 +191,6 @@ function App() {
                 <Validators />
               </LayoutDecentralised>
             </Route>
-            <Route exact path="/test">
-              <Test />
-            </Route>
             <ThemeProvider theme={centerTheme}>
               <LayoutCentralised>
                 <Route path="/centralised/nft">
@@ -206,9 +201,6 @@ function App() {
                 </Route>
                 <Route path="/centralised/exchange">
                   <ExchangeCentralised />
-                </Route>
-                <Route path="/centralised/getjwt">
-                  <GetJwt />
                 </Route>
                 <Route exact path="/centralised/kyc">
                   <SubmitKyc />

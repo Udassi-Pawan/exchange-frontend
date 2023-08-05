@@ -8,7 +8,6 @@ import { MyContext } from "../MyContext";
 export default function Start() {
   const { setDialogueText } = useContext(MyContext);
   const metamaskHandler = async function () {
-    console.log(window.ethereum);
     try {
       const provider = new ethers.providers.Web3Provider(window.ethereum);
       if ((await provider!.listAccounts())[0])

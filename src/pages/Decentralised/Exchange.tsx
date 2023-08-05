@@ -50,7 +50,6 @@ export default function Exchange() {
       });
 
       sepoliaContract.on("transactionAttested", async (nonce, requestor) => {
-        console.log(requestor, acc, typeof requestor, typeof acc);
         if (requestor != acc) return;
 
         await timers.setTimeout(3000);

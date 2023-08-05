@@ -105,7 +105,13 @@ export default function SubmitKyc() {
             <Typography textAlign={"center"} variant={"h3"}>
               Please complete KYC to use more features.
             </Typography>
-            <Typography variant={"h5"}>Get Your KYC code here</Typography>
+            <Typography variant={"h5"}>
+              Get Your KYC code{" "}
+              <a target="_blank" href="https://kyc-master.onrender.com/">
+                {" "}
+                here{" "}
+              </a>{" "}
+            </Typography>
           </Stack>
           <Stack alignItems={"center"} direction={"row"} spacing={3}>
             <TextField inputRef={jwt} placeholder="KYC Code"></TextField>
