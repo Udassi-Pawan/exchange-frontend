@@ -26,7 +26,7 @@ export default function Start() {
           "url('https://cdn.pixabay.com/photo/2017/01/18/18/03/filter-1990470_1280.jpg')",
         backgroundSize: 6000,
         pt: 20,
-        height: "100vh",
+        height: "200vh",
       }}
     >
       <Stack alignItems={"center"}>
@@ -37,7 +37,7 @@ export default function Start() {
         >
           Connect Metamask
         </Button>
-        <Stack alignItems={"center"} direction={"row"}>
+        <Stack alignItems={"center"} direction={{ md: "row", xs: "column" }}>
           <div className="card">
             <div className="header">
               <span className="title">Exchange</span>
