@@ -48,10 +48,10 @@ function App() {
   const [nftContractDecentralised, setNftContractDecentralised] =
     useState<Contract>();
 
-  window.ethereum.on("accountsChanged", async function () {
-    const provider = new ethers.providers.Web3Provider(window.ethereum);
-    setAcc((await provider.listAccounts())[0]);
-  });
+  // window.ethereum.on("accountsChanged", async function () {
+  //   const provider = new ethers.providers.Web3Provider(window.ethereum);
+  //   setAcc((await provider.listAccounts())[0]);
+  // });
 
   async function setContracts() {
     const provider = new ethers.providers.Web3Provider(window.ethereum);
@@ -91,26 +91,29 @@ function App() {
   }
   useEffect(() => {
     (async function () {
-      const provider = new ethers.providers.Web3Provider(window.ethereum);
-      if (!(await provider?.listAccounts())[0])
+      try {
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        if (!(await provider?.listAccounts())[0])
+          setDialogueText("Please connect metamask to use all features.");
+      } catch (e) {
         setDialogueText("Please connect metamask to use all features.");
+      }
     })();
   }, []);
   useEffect(() => {
     let provider: ethers.providers.Web3Provider;
     (async function () {
-      if (typeof window.ethereum == undefined) {
+      try {
+        provider = new ethers.providers.Web3Provider(window.ethereum);
+        await provider.send("eth_requestAccounts", []);
+      } catch (e) {
         return setDialogueText("Please install Metamask.");
       }
-      provider = new ethers.providers.Web3Provider(window.ethereum);
-      try {
-        await provider.send("eth_requestAccounts", []);
-      } catch (e) {}
       if ((await provider?.listAccounts())[0]) setContracts();
     })();
   }, [acc, chainId]);
 
-  async function changeNetworkEvent(e: React.ChangeEvent<HTMLInputElement> ) {
+  async function changeNetworkEvent(e: React.ChangeEvent<HTMLInputElement>) {
     try {
       await window.ethereum.request({
         method: "wallet_switchEthereumChain",

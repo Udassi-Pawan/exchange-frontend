@@ -16,32 +16,9 @@ import { useTheme } from "@mui/material/styles";
 import getSignedContract from "../../signedContracts/scriptsDecentralised";
 const timers = require("timers-promises");
 
-let curAccount;
 
 const mumbaiContract = getSignedContract("80001");
 const sepoliaContract = getSignedContract("11155111");
-
-// mumbaiContract.on("transactionAttested", async (nonce, requestor) => {
-//   console.log(requestor);
-//   await timers.setTimeout(3000);
-//   try {
-//     console.log("completing ", nonce);
-//     const tx = await mumbaiContract.completeAttestedTx(nonce);
-//     console.log(await tx.wait());
-//   } catch (e) {}
-//   window.location.reload();
-// });
-
-// sepoliaContract.on("transactionAttested", async (nonce, requestor) => {
-//   console.log(requestor);
-//   await timers.setTimeout(3000);
-//   try {
-//     console.log("completing ", nonce);
-//     const tx = await sepoliaContract.completeAttestedTx(nonce);
-//     console.log(await tx.wait());
-//   } catch (e) {}
-//   window.location.reload();
-// });
 
 export default function Exchange() {
   const theme = useTheme();

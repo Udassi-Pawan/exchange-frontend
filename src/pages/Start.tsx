@@ -9,14 +9,18 @@ export default function Start() {
   const { setDialogueText } = useContext(MyContext);
   const metamaskHandler = async function () {
     console.log(window.ethereum);
-    const provider = new ethers.providers.Web3Provider(window.ethereum);
-    if ((await provider!.listAccounts())[0])
-      return setDialogueText("Metamask already connected.");
     try {
-      await window.ethereum.request({ method: "eth_requestAccounts" });
-      await provider.send("eth_requestAccounts", []);
+      const provider = new ethers.providers.Web3Provider(window.ethereum);
+      if ((await provider!.listAccounts())[0])
+        return setDialogueText("Metamask already connected.");
+      try {
+        await window.ethereum.request({ method: "eth_requestAccounts" });
+        await provider.send("eth_requestAccounts", []);
+      } catch (e) {
+        setDialogueText("Please unlock Metamask from extension menu.");
+      }
     } catch (e) {
-      setDialogueText("Please unlock Metamask from extension menu.");
+      setDialogueText("Please install metamask");
     }
   };
   return (

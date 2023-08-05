@@ -15,11 +15,17 @@ const Layout = function (props: { children: React.ReactNode }) {
   const { setDialogueText } = useContext(MyContext);
   useEffect(() => {
     (async function () {
-      const provider = new ethers.providers.Web3Provider(window.ethereum);
-      if (!(await provider!.listAccounts())[0])
-        return setDialogueText(
+      try {
+        const provider = new ethers.providers.Web3Provider(window.ethereum);
+        if (!(await provider!.listAccounts())[0])
+          return setDialogueText(
+            "Some features might not work without metamask enabled."
+          );
+      } catch (e) {
+        setDialogueText(
           "Some features might not work without metamask enabled."
         );
+      }
     })();
   }, []);
   return (
