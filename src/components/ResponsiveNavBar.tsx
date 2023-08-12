@@ -203,7 +203,9 @@ function ResponsiveAppBar(props: { centralised?: boolean; pages: string[][] }) {
                 {chainId != "80001" && (
                   <MenuItem value={"80001"}>Mumbai</MenuItem>
                 )}
-                {chainId != "97" && <MenuItem value={"97"}>BSC</MenuItem>}
+                {chainId != "97" && props.centralised == false && (
+                  <MenuItem value={"97"}>BSC</MenuItem>
+                )}
               </Select>
             </FormControl>
             <Typography mt={1} color="#333">
